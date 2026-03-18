@@ -1,0 +1,130 @@
+_______________Estrutura de Pastas___________________
+
+    /admin
+        admin.php
+        albuns_sem_faixa.php
+        excluir_album.php
+        excluir_faixa.php    
+    /assets
+        /css
+            layout.css
+            style.css
+        /img
+        /js
+            album.js
+    /includes
+        config.php
+        footer.php    
+        header.php
+        musicbrainz.php
+        session.php
+    /uploads
+        /capas  
+    adicionar_dash.php
+    album.php
+    buscar_album_mb.php
+    buscar_banda_mb.php
+    dash.php
+    desmarcar_faixa.php
+    editar_banda.php
+    gerar_senha.php
+    index.php
+    listar_bandas.php
+    login.php
+    logout.php
+    marcar_faixa.php
+    nova_banda.php
+    nova_faixa.php
+    nova_genero.php
+    novo_album.php
+    registrar_reproducao.php
+    remover_dash.php
+    remover_reproducao.php  
+    salvar_avaliacao.php
+    salvar_faixa_ajax.php
+    teste_faixas.php
+    teste_importar_faixas.php
+    toggle_favorito.php
+    vincular_banda_album.php
+
+    ______________________________________________________
+
+
+🗄 Banco de Dados (Resumo Estrutural)
+
+
+albuns
+
+    id
+    banda_id
+    titulo
+    ano
+    capa
+    criado_por
+
+avaliacoes
+    id
+    usuario_id
+    faixa_id
+    nota
+    favorita
+
+bandas
+
+    id
+    nome
+    slug
+    imagem
+    criado_em
+    ano_formacao
+    cidade
+
+banda_genero
+    banda_id
+    genero_id
+
+progresso_album
+
+    id
+    usuario_id
+    album_id
+    progresso
+
+faixas
+    id
+    album_id
+    numero
+    nome
+    duracao
+    total_ouvidas
+
+generos
+    id
+    nome
+    slug
+    ativo
+
+progresso_album
+    id
+    usuario_id
+    album_id
+    progresso
+
+reproducoes
+	id 
+    usuario_id
+    faixa_id
+    data_hora
+
+usuarios
+
+    id
+    nome
+    email
+    senha
+    tipo (admin | usuario)
+
+usuario_dash
+    	id 
+        usuario_id
+        album_id
