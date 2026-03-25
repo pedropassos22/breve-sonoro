@@ -441,7 +441,7 @@ function buscarReleaseDoReleaseGroup($releaseGroupMBID) {
 
 function baixarCapaFanart($bandaNome, $albumNome) {
 
-    $apiKey = "bcfd01812435f521e5d30e72928cca2a";
+    $apiKey = $_ENV['FANART_API_KEY'] ?? null;
 
     // 🔥 Buscar álbum no MusicBrainz pra pegar MBID correto
     $resultados = buscarAlbumMusicBrainz($albumNome, $bandaNome);
@@ -500,7 +500,7 @@ function baixarCapaFanart($bandaNome, $albumNome) {
 
 function buscarCapasFanart($bandaNome, $albumNome) {
 
-    $apiKey = "bcfd01812435f521e5d30e72928cca2a";
+    $apiKey = $_ENV['FANART_API_KEY'] ?? null;
 
     $resultados = buscarAlbumMusicBrainz($albumNome, $bandaNome);
 

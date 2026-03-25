@@ -4,19 +4,19 @@ define('BASE_URL', '/breve-sonoro/');
 
 // Define as configurações de conexão com o banco
 
-$host = "localhost"; 
+$host = "localhost";
 // Servidor do banco (localhost porque está rodando no seu PC)
 
-$db   = "brevesonoro"; 
+$db   = "breve_sonoro";
 // Nome do banco de dados que você criou no phpMyAdmin
 
-$user = "rooot"; 
+$user = "root";
 // Usuário padrão do MySQL no XAMPP
 
-$pass = ""; 
+$pass = "";
 // Senha do MySQL (no XAMPP padrão geralmente é vazia)
 
-$charset = "utf8mb4"; 
+$charset = "utf8mb4";
 // Charset moderno que suporta acentos e caracteres especiais corretamente
 
 
@@ -46,4 +46,18 @@ try {
 } catch (PDOException $e) {
     // Se falhar, exibe erro e para tudo
     exit("Erro na conexão com o banco: " . $e->getMessage());
+}
+
+// carregar .env simples
+$envPath = __DIR__ . '/../.env';
+
+if (file_exists($envPath)) {
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+
+        list($key, $value) = explode('=', $line, 2);
+        $_ENV[$key] = trim($value);
+    }
 }

@@ -2,6 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+require "services/AlbumService.php";
 require "includes/config.php";
 require "includes/session.php";
 
@@ -16,15 +17,9 @@ $album_id = $_GET['id'];
 // ==========================
 // 1️⃣ BUSCAR O ÁLBUM
 // ==========================
-$stmt = $pdo->prepare("
-    SELECT albuns.*, bandas.nome AS banda_nome
-    FROM albuns
-    JOIN bandas ON albuns.banda_id = bandas.id
-    WHERE albuns.id = ?
-");
 
-$stmt->execute([$album_id]);
-$album = $stmt->fetch(PDO::FETCH_ASSOC);
+$album = buscarAlbumPorId($pdo, $album_id);
+
 
 // Verificar se já está na dash
 $stmtDash = $pdo->prepare("
@@ -47,38 +42,9 @@ if (!$album) {
 
 $usuario_id = $_SESSION['usuario_id'];
 
-$stmt = $pdo->prepare("
-SELECT 
-        f.id,
-        f.album_id,
-        f.disco,
-        f.numero,
-        f.nome,
-        f.duracao,
-        COUNT(r.id) AS total_ouvidas,
-        a.nota,
-        a.favorita
+$faixas = buscarFaixasDoAlbum($pdo, $album_id, $usuario_id);
 
-    FROM faixas f
 
-    LEFT JOIN reproducoes r
-        ON f.id = r.faixa_id
-        AND r.usuario_id = ?
-
-    LEFT JOIN avaliacoes a
-        ON f.id = a.faixa_id
-        AND a.usuario_id = ?
-
-    WHERE f.album_id = ?
-
-    GROUP BY f.id
-
-    ORDER BY f.disco ASC, f.numero ASC
-");
-
-$stmt->execute([$usuario_id, $usuario_id, $album_id]);
-
-$faixas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // ==========================
 // AGRUPAR FAIXAS POR DISCO
 // ==========================
@@ -100,18 +66,7 @@ foreach ($faixas as $faixa) {
 // 3️⃣ BUSCAR PROGRESSO SALVO
 // ==========================
 
-$stmtProg = $pdo->prepare("
-    SELECT progresso 
-    FROM progresso_album
-    WHERE usuario_id = ? AND album_id = ?
-");
-
-$stmtProg->execute([$usuario_id, $album_id]);
-
-$result = $stmtProg->fetch(PDO::FETCH_ASSOC);
-
-$progresso_percent = $result['progresso'] ?? 0;
-
+$progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
 
 
 ?>
@@ -143,7 +98,7 @@ $progresso_percent = $result['progresso'] ?? 0;
                             </span>
 
                             <?php if ($estaNaDash): ?>
-                                <form method="POST" action="remover_dash.php">
+                                <form method="POST" action="<?php echo BASE_URL; ?>actions/remover_dash.php">
                                     <input type="hidden" name="album_id" value="<?php echo $album_id; ?>">
                                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit" class="dash-btn dash-remove">
@@ -151,7 +106,7 @@ $progresso_percent = $result['progresso'] ?? 0;
                                     </button>
                                 </form>
                             <?php else: ?>
-                                <form method="POST" action="adicionar_dash.php">
+                                <form method="POST" action="<?php echo BASE_URL; ?>actions/adicionar_dash.php">
                                     <input type="hidden" name="album_id" value="<?php echo $album_id; ?>">
                                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit" class="dash-btn">

@@ -1,8 +1,10 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
+
+require "../includes/bootstrap.php";
 
 verificarLogin();
+validarPost();
+validarCSRF($_POST['csrf_token'] ?? '');
 
 $faixa_id = (int) ($_POST['faixa_id'] ?? 0);
 $usuario_id = $_SESSION['usuario_id'];
@@ -14,11 +16,11 @@ if ($faixa_id <= 0) {
 }
 
 $stmt = $pdo->prepare("
-    DELETE FROM reproducoes
-    WHERE usuario_id = ? AND faixa_id = ?
-    LIMIT 1
+    INSERT INTO reproducoes (usuario_id, faixa_id)
+    VALUES (?, ?)
 ");
 
 $stmt->execute([$usuario_id, $faixa_id]);
 
+header('Content-Type: application/json');
 echo json_encode(["status" => "ok"]);

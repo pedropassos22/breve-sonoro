@@ -1,8 +1,11 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
+require "../includes/bootstrap.php";
 
 verificarLogin();
+validarPost();
+validarCSRF($_POST['csrf_token'] ?? '');
+
+
 
 $faixa_id = (int) ($_POST['faixa_id'] ?? 0);
 $usuario_id = $_SESSION['usuario_id'];

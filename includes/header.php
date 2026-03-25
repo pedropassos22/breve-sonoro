@@ -12,6 +12,12 @@ if (session_status() === PHP_SESSION_NONE) {
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+    const BASE_URL = "<?php echo BASE_URL; ?>";
+    const CSRF_TOKEN = "<?php echo $_SESSION['csrf_token']; ?>";
+    </script>
+
 </head>
 
 

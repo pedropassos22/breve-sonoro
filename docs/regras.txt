@@ -1,0 +1,25 @@
+Não é mais um projéto, é um sistema
+
+Arquivos de ação ficam na pasta actions/
+
+Não usar AJAX ainda (por enquanto)
+
+Progresso é baseado em reproduções
+
+Dash é por usuário
+
+----------//--------//---------
+
+actions/ → só executa
+    👉 recebe requisição
+    👉 valida
+    👉 chama service
+
+services/ → pensa e decide
+    👉 contém a lógica
+    👉 mexe no banco
+    👉 decide o que acontece
+
+includes/ → suporte
+
+----------//--------//---------

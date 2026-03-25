@@ -1,9 +1,12 @@
 <?php
 
-require "includes/config.php";
-require "includes/session.php";
+require "../includes/bootstrap.php";
 
 verificarLogin();
+validarPost();
+validarCSRF($_POST['csrf_token'] ?? '');
+
+
 
 $usuario_id = $_SESSION['usuario_id'];
 $album_id = (int) ($_POST['album_id'] ?? 0);

@@ -1,15 +1,22 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
+require "../includes/bootstrap.php";
+header('Content-Type: application/json');
+
 
 verificarLogin();
+validarPost();
+validarCSRF($_POST['csrf_token'] ?? '');
 
-if (!isset($_POST['faixa_id'])) {
-    exit("Faixa não especificada.");
+$faixa_id = (int) ($_POST['faixa_id'] ?? 0);
+
+if ($faixa_id <= 0) {
+    http_response_code(400);
+    echo json_encode(["erro" => "Faixa inválida"]);
+    exit;
 }
 
 $usuario_id = $_SESSION['usuario_id'];
-$faixa_id = $_POST['faixa_id'];
+
 
 // Buscar album_id da faixa
 $stmt = $pdo->prepare("
@@ -109,7 +116,7 @@ $stmt = $pdo->prepare("
     WHERE f.album_id = ?
     GROUP BY f.id
 ");
-$stmt->execute([$usuario_id, $usuario_id, $album_id ?? 0]);
+$stmt->execute([$usuario_id, $usuario_id, $album_id]);
 $faixas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $total_faixas = count($faixas);

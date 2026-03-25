@@ -43,8 +43,10 @@ document.querySelectorAll(".star-rating").forEach(rating => {
             let form = rating.closest("form");
             let formData = new FormData(form);
             formData.append("nota", valor);
+            formData.append("csrf_token", CSRF_TOKEN);
 
-fetch("salvar_avaliacao.php", { method: "POST", body: formData })
+
+fetch(BASE_URL + "actions/salvar_avaliacao.php", { method: "POST", body: formData })
     .then(() => {
         let row = rating.closest(".track-row");
         let heart = row.querySelector(".heart-btn");
@@ -93,8 +95,10 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
 
         let formData = new FormData();
         formData.append("faixa_id", faixaId);
+        formData.append("csrf_token", CSRF_TOKEN);
 
-        fetch("toggle_favorito.php", {
+
+        fetch(BASE_URL + "actions/toggle_favorito.php", {
             method: "POST",
             body: formData
         });
@@ -123,8 +127,10 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
 
             let formData = new FormData();
             formData.append("faixa_id", faixaId);
+            formData.append("csrf_token", CSRF_TOKEN);
 
-            fetch("registrar_reproducao.php", {
+
+            fetch(BASE_URL + "actions/registrar_reproducao.php", {
                 method: "POST",
                 body: formData
             })
@@ -152,8 +158,10 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
 
                 let formData = new FormData();
                 formData.append("faixa_id", faixaId);
+                formData.append("csrf_token", CSRF_TOKEN);
 
-                fetch("remover_reproducao.php", {
+
+                fetch(BASE_URL + "actions/remover_reproducao.php", {
                     method: "POST",
                     body: formData
                 })
@@ -161,38 +169,7 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
             }
         });
     });
-
-function atualizarBarraProgresso() {
-    let rows = document.querySelectorAll(".track-row");
-    let totalFaixas = rows.length;
-    let faixasConcluidas = 0;
-
-    rows.forEach(row => {
-        let count = parseInt(row.querySelector(".play-count").textContent);
-        let nota = parseFloat(row.querySelector(".star-rating").dataset.nota) || 0;
-
-        let contrib = 0;
-        if (count > 0) {
-            contrib += 0.5;
-        }
-        if (nota > 0) {
-            contrib += 0.5;
-        }
-        faixasConcluidas += contrib;
-    });
-
-    let progressoPercent = totalFaixas > 0 
-        ? Math.round((faixasConcluidas / totalFaixas) * 100)
-        : 0;
-
-    // Atualiza a barra visual
-    let fill = document.querySelector(".album-progress-fill");
-    let text = document.querySelector(".album-progress-text");
-    if (fill) fill.style.width = progressoPercent + "%";
-    if (text) text.textContent = progressoPercent + "%";
-}
-
-
+    
 function atualizarBarraProgresso() {
 
     let rows = document.querySelectorAll(".track-row");
@@ -235,8 +212,10 @@ function atualizarBarraProgresso() {
     let formData = new FormData();
     formData.append("album_id", albumId);
     formData.append("progresso", progressoPercent);
+    formData.append("csrf_token", CSRF_TOKEN);
 
-    fetch("salvar_progresso.php", {
+
+    fetch(BASE_URL + "actions/salvar_progresso.php", {
         method: "POST",
         body: formData
     });
