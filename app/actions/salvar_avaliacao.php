@@ -34,7 +34,13 @@ $nota = isset($_POST['nota']) && $_POST['nota'] !== ''
     ? floatval($_POST['nota']) 
     : null;
 
-$favorita = isset($_POST['favorita']) ? 1 : 0;
+// Favorita só altera se vier no POST
+$favorita = null;
+
+if (isset($_POST['favorita'])) {
+    $favorita = $_POST['favorita'] ? 1 : 0;
+}
+
 
 // Se atribuiu nota, garantir pelo menos 1 reprodução
 if ($nota !== null) {
@@ -69,27 +75,58 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$usuario_id, $faixa_id]);
 
-$existe = $stmt->fetch();
+$existe = $stmt->fetchColumn();
 
 if ($existe) {
 
-    $stmt = $pdo->prepare("
-        UPDATE avaliacoes
-        SET nota = ?, favorita = ?
-        WHERE usuario_id = ? AND faixa_id = ?
-    ");
+    // UPDATE
+    if ($favorita !== null) {
 
-    $stmt->execute([$nota, $favorita, $usuario_id, $faixa_id]);
+        $stmt = $pdo->prepare("
+            UPDATE avaliacoes
+            SET nota = ?, favorita = ?
+            WHERE usuario_id = ? AND faixa_id = ?
+        ");
+
+        $stmt->execute([
+            $nota,
+            $favorita,
+            $usuario_id,
+            $faixa_id
+        ]);
+
+    } else {
+
+        $stmt = $pdo->prepare("
+            UPDATE avaliacoes
+            SET nota = ?
+            WHERE usuario_id = ? AND faixa_id = ?
+        ");
+
+        $stmt->execute([
+            $nota,
+            $usuario_id,
+            $faixa_id
+        ]);
+    }
 
 } else {
 
+    // INSERT
     $stmt = $pdo->prepare("
-        INSERT INTO avaliacoes (usuario_id, faixa_id, nota, favorita)
+        INSERT INTO avaliacoes
+        (usuario_id, faixa_id, nota, favorita)
         VALUES (?, ?, ?, ?)
     ");
 
-    $stmt->execute([$usuario_id, $faixa_id, $nota, $favorita]);
+    $stmt->execute([
+        $usuario_id,
+        $faixa_id,
+        $nota,
+        $favorita ?? 0
+    ]);
 }
+
 
 // ==========================
 // Retornar JSON para atualização em tempo real
@@ -105,24 +142,36 @@ $total_ouvidas_atualizado = (int)$stmt->fetchColumn();
 
 // Recalcular progresso do álbum
 $stmt = $pdo->prepare("
-    SELECT f.id, COUNT(r.id) AS total_ouvidas, a.nota
+    SELECT 
+        f.id,
+
+        EXISTS (
+            SELECT 1
+            FROM reproducoes r
+            WHERE r.faixa_id = f.id
+            AND r.usuario_id = ?
+            LIMIT 1
+        ) AS ouviu,
+
+        a.nota
+
     FROM faixas f
-    LEFT JOIN reproducoes r
-        ON f.id = r.faixa_id
-        AND r.usuario_id = ?
+
     LEFT JOIN avaliacoes a
-        ON f.id = a.faixa_id
+        ON a.faixa_id = f.id
         AND a.usuario_id = ?
+
     WHERE f.album_id = ?
-    GROUP BY f.id
 ");
+
+
 $stmt->execute([$usuario_id, $usuario_id, $album_id]);
 $faixas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $total_faixas = count($faixas);
 $faixas_concluidas = 0;
 foreach ($faixas as $faixa) {
-    if ($faixa['total_ouvidas'] > 0) {
+    if ($faixa['ouviu']) {
         $contribuicao = 0.5;
         if ($faixa['nota'] !== null) $contribuicao += 0.5;
         $faixas_concluidas += $contribuicao;

@@ -28,28 +28,60 @@ $totalPaginas = ceil($totalAlbuns / $limite);
 
 
 $stmt = $pdo->prepare("
-    SELECT 
-        a.id,
-        a.titulo,
-        a.ano,
-        a.capa,
-        b.nome AS banda_nome,
-        COALESCE(pa.progresso, 0) AS progresso
-    FROM albuns a
-    INNER JOIN bandas b ON a.banda_id = b.id
-    LEFT JOIN progresso_album pa
-        ON pa.album_id = a.id 
-        AND pa.usuario_id = :usuario_id
-    ORDER BY a.id DESC
-    LIMIT :limite OFFSET :offset
+SELECT
+    a.id,
+    a.titulo,
+    a.ano,
+    a.capa,
+    b.nome AS banda_nome,
+
+COALESCE(
+ROUND(
+(
+    SUM(
+        CASE
+            WHEN EXISTS (
+                SELECT 1
+                FROM reproducoes r
+                WHERE r.faixa_id = f.id
+                AND r.usuario_id = :usuario_reproducao
+                LIMIT 1
+            )
+            THEN 0.5 ELSE 0
+        END
+        +
+        CASE
+            WHEN av.nota IS NOT NULL THEN 0.5
+            ELSE 0
+        END
+    )
+    / COUNT(f.id)
+) * 100
+),
+0) AS progresso
+
+
+FROM albuns a
+INNER JOIN bandas b ON a.banda_id = b.id
+LEFT JOIN faixas f ON f.album_id = a.id
+
+
+
+LEFT JOIN avaliacoes av
+    ON av.faixa_id = f.id
+    AND av.usuario_id = :usuario_avaliacao
+
+GROUP BY a.id
+ORDER BY a.id DESC
+LIMIT :limite OFFSET :offset
 ");
 
+$stmt->bindValue(':usuario_reproducao', $usuario_id, PDO::PARAM_INT);
+$stmt->bindValue(':usuario_avaliacao', $usuario_id, PDO::PARAM_INT);
 
-
-
-$stmt->bindValue(':usuario_id', $usuario_id, PDO::PARAM_INT);
 $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
 $stmt->execute();
 
 $albuns = $stmt->fetchAll(PDO::FETCH_ASSOC);?>

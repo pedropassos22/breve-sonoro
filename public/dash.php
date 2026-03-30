@@ -13,25 +13,61 @@ verificarLogin();
 $usuario_id = $_SESSION['usuario_id'];
 
 $stmt = $pdo->prepare("
-    SELECT 
-        a.id,
-        a.titulo,
-        a.ano,
-        a.capa,
-        b.nome AS banda_nome,
-        COALESCE(p.progresso, 0) AS progresso
-    FROM usuario_dash d
-    JOIN albuns a ON d.album_id = a.id
-    JOIN bandas b ON a.banda_id = b.id
-    LEFT JOIN progresso_album p 
-        ON a.id = p.album_id
-        AND p.usuario_id = ?
-    WHERE d.usuario_id = ?
-    ORDER BY a.id DESC
+SELECT 
+    a.id,
+    a.titulo,
+    a.ano,
+    a.capa,
+    b.nome AS banda_nome,
+
+ROUND(
+(
+    SUM(
+        CASE 
+            WHEN EXISTS (
+                SELECT 1
+                FROM reproducoes r
+                WHERE r.faixa_id = f.id
+                AND r.usuario_id = ?
+                LIMIT 1
+            )
+            THEN 0.5 ELSE 0
+        END
+        +
+        CASE 
+            WHEN av.nota IS NOT NULL THEN 0.5
+            ELSE 0
+        END
+    )
+    / COUNT(f.id)
+) * 100
+) AS progresso
+
+
+FROM usuario_dash d
+JOIN albuns a ON d.album_id = a.id
+JOIN bandas b ON a.banda_id = b.id
+JOIN faixas f ON f.album_id = a.id
+
+LEFT JOIN avaliacoes av
+    ON av.faixa_id = f.id
+    AND av.usuario_id = ?
+
+
+WHERE d.usuario_id = ?
+
+GROUP BY a.id
+ORDER BY a.id DESC
 ");
 
 
-$stmt->execute([$usuario_id, $usuario_id]);
+$stmt->execute([
+    $usuario_id, // EXISTS reproducoes
+    $usuario_id, // avaliacoes
+    $usuario_id  // dash
+]);
+
+
 $albuns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $paginaClasse = 'dash';

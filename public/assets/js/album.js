@@ -89,23 +89,26 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
 
     btn.addEventListener("click", function () {
 
+        if (this.classList.contains("disabled")) return;
+
         this.classList.toggle("active");
 
+        let favorita = this.classList.contains("active") ? 1 : 0;
         let faixaId = this.dataset.faixaId;
 
         let formData = new FormData();
         formData.append("faixa_id", faixaId);
+        formData.append("favorita", favorita);
         formData.append("csrf_token", CSRF_TOKEN);
 
-
-        fetch(BASE_URL + "actions/toggle_favorito.php", {
+        fetch(BASE_URL + "actions/salvar_avaliacao.php", {
             method: "POST",
             body: formData
         });
-
     });
 
 });
+
 
 
 
