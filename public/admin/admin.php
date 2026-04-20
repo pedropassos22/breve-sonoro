@@ -1,14 +1,7 @@
 <?php
-require "../includes/config.php";
-require "../includes/session.php";
-
-if (!isset($_SESSION['usuario_id']) || $_SESSION['usuario_tipo'] !== 'admin') {
-    die("Acesso negado.");
-}
-
+require dirname(__DIR__, 2) . '/app/includes/bootstrap.php';
 
 verificarLogin();
-
 verificarAdmin();
 
 
@@ -36,6 +29,35 @@ verificarAdmin();
             WHERE f.id IS NULL
         ");
         $totalAlbunsSemFaixa = $stmt->fetchColumn();
+
+        // ÁLBUNS SEM SPOTIFY
+        $stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM albuns a
+            LEFT JOIN plataformas_streaming p 
+                ON p.slug = 'spotify'
+            LEFT JOIN album_streaming_links s
+                ON s.album_id = a.id
+                AND s.plataforma_id = p.id
+            WHERE s.id IS NULL
+        ");
+        $totalSemSpotify = $stmt->fetchColumn();
+
+
+        // ÁLBUNS SEM QOBUZ
+        $stmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM albuns a
+            LEFT JOIN plataformas_streaming p 
+                ON p.slug = 'qobuz'
+            LEFT JOIN album_streaming_links s
+                ON s.album_id = a.id
+                AND s.plataforma_id = p.id
+            WHERE s.id IS NULL
+        ");
+        $totalSemQobuz = $stmt->fetchColumn();
+
+
 
         // ÚLTIMOS 5 ÁLBUNS
         $stmt = $pdo->query("
@@ -73,9 +95,9 @@ verificarAdmin();
 <h2>Dashboard Administrativo</h2>
 
 <p>
-    <a href="../index.php">Início</a> |
-    <a href="../dash.php">Minha Dash</a> |
-    <a href="../logout.php">Sair</a>
+    <a href="/index.php">Início</a> |
+    <a href="/dash.php">Minha Dash</a> |
+    <a href="/logout.php">Sair</a>
 </p>
 
 <hr>
@@ -106,6 +128,25 @@ verificarAdmin();
         <h3>Álbuns sem Faixa</h3>
         <div class="numero"><?php echo $totalAlbunsSemFaixa; ?></div>
     </div>
+    
+    <div class="card">
+    <h3>Álbuns sem Spotify</h3>
+    <div class="numero">
+        <a href="/admin/albuns_sem_streaming.php?plataforma=spotify">
+            <?php echo $totalSemSpotify; ?>
+        </a>
+    </div>
+    </div>
+
+    <div class="card">
+        <h3>Álbuns sem Qobuz</h3>
+        <div class="numero">
+            <a href="/admin/albuns_sem_streaming.php?plataforma=qobuz">
+                <?php echo $totalSemQobuz; ?>
+            </a>
+        </div>
+    </div>
+
 </div>
 
 <h3>Últimos 5 Álbuns Cadastrados</h3>
@@ -126,7 +167,7 @@ verificarAdmin();
             <td>
                 <form method="POST" action="excluir_album.php" onsubmit="return confirm('Tem certeza que deseja excluir este álbum?');">
                     <input type="hidden" name="album_id" value="<?php echo $album['id']; ?>">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>"
                     <button type="submit">Excluir</button>
                 </form>
             </td>
@@ -140,20 +181,16 @@ verificarAdmin();
 <h3>Gerenciamento</h3>
 
 <ul>
-    <li><a href="../novo_album.php">Cadastrar novo álbum</a></li>
-    <li><a href="../nova_banda.php">Cadastrar nova banda</a></li>
-    <li><a href="../nova_genero.php">Cadastrar gênero</a></li>
-    <li><a href="../listar_bandas.php">Listar bandas</a></li>
-    <li><a href="albuns_sem_faixa.php">Álbuns sem faixas</a></li>
+    <li><a href="/admin/novo_album.php">Cadastrar novo álbum</a></li>
+    <li><a href="/admin/nova_banda.php">Cadastrar nova banda</a></li>
+    <li><a href="/admin/nova_genero.php">Cadastrar gênero</a></li>
+    <li><a href="/admin/listar_bandas.php">Listar bandas</a></li>
+    <li><a href="/admin/albuns_sem_faixa.php">Álbuns sem faixas</a></li>
 </ul>
 
 <hr>
 
-<a href="../index.php">Voltar ao início</a>
+<a href="/index.php">Voltar ao início</a>
 
 </body>
 </html>
-
-
-
-

@@ -1,5 +1,5 @@
 <?php
-require "../includes/bootstrap.php";
+require __DIR__ . '/../../app/includes/bootstrap.php';
 
 verificarLogin();
 validarPost();

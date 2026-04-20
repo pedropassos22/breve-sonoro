@@ -1,6 +1,8 @@
 <?php
 
-require "../includes/bootstrap.php";
+require __DIR__ . '/../../app/includes/bootstrap.php';
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 verificarLogin();
 validarPost();
@@ -15,12 +17,7 @@ if ($faixa_id <= 0) {
     exit;
 }
 
-$stmt = $pdo->prepare("
-    INSERT INTO reproducoes (usuario_id, faixa_id)
-    VALUES (?, ?)
-");
-
-$stmt->execute([$usuario_id, $faixa_id]);
+registrarReproducao($pdo, $usuario_id, $faixa_id);
 
 header('Content-Type: application/json');
 echo json_encode(["status" => "ok"]);

@@ -1,21 +1,20 @@
-Este vai ser o resumo-mãe do breve-sonoro — feito exatamente para:
+Perfeito.
+Abaixo está o RESUMO-MÃE atualizado, já fundido, organizado e coerente arquiteturalmente — agora ele vira oficialmente o:
 
-✅ iniciar um novo chat sem perda de contexto
-✅ manter coerência arquitetural
-✅ preservar decisões técnicas (isso é o mais importante)
-✅ transformar você de usuário do projeto → arquiteto do sistema
+✅ Documento de Continuidade Absoluta do Breve-Sonoro
 
----
-🧠 📦 BREVE-SONORO — RESUMO COMPLETO ATUALIZADO
----
+Você pode colar isso inteiro em qualquer novo chat e o projeto continua exatamente do mesmo ponto mental.
+
+🧠 📦 BREVE-SONORO — RESUMO COMPLETO DEFINITIVO
 🎯 VISÃO DO PROJETO
 
-breve-sonoro é um sistema web estilo tracker musical pessoal.
+breve-sonoro é um sistema web de tracking musical pessoal.
 
 O foco não é streaming.
+
 O foco é:
 
-👉 acompanhar a experiência de ouvir música.
+👉 acompanhar a experiência humana de ouvir música.
 
 O sistema permite:
 
@@ -23,321 +22,438 @@ registrar escutas
 avaliar faixas
 marcar favoritas
 acompanhar progresso de álbuns
-manter uma dashboard pessoal
+manter uma dashboard musical pessoal
 
 Inspirado conceitualmente em:
 
 Letterboxd (filmes)
 Goodreads (livros)
 Last.fm (escuta)
-backlog tracker
----
-🧠 FILOSOFIA DO PROJETO (DECISÃO IMPORTANTE)
+backlog trackers
+🧠 FILOSOFIA DO PROJETO
 
-O projeto segue:
+O projeto segue decisões conscientes:
 
 ✅ backend-first
-✅ lógica antes de visual
-✅ regras claras de sistema
-✅ interface pode evoluir depois
+✅ domínio antes de visual
+✅ regras explícitas
+✅ interface evolui depois
 
-Você não é designer → e isso foi assumido como decisão arquitetural.
----
+Decisão arquitetural assumida:
+
+o sistema é pensado como software primeiro, site depois.
+
 🏗️ ARQUITETURA ATUAL
-
 breve-sonoro/
-│
-├── index.php
-├── album.php
-├── dash.php
-├── atualizar_progresso.php
-├── buscar_banda_mb.php
-├── buscar_album_mb.php
-├── desmarcar_faixa.php
-├── editar_banda.php
-├── gerar_senha.php
-├── listar_bandas.php
-├── login.php
-├── logout.php
-├── nova_banda.php
-├── nova_faixa.php
-├── nova_genero.php
-├── novo_album.php
-├── salvar_faixa_ajax.php
-├── teste_faixas.php
-├── teste_importar_faixas.php
-├── vincular_banda_album.php
-│
-├── actions/
-│   ├── adicionar_dash.php
-│   ├── remover_dash.php
-│   ├── registrar_reproducao.php
-│   ├── remover_reproducao.php
-│   ├── toggle_favorito.php
-│   └── salvar_avaliacao.php
-│
-├── admin/
-│   ├── admin.php
-│   ├── albuns_sem_faixa.php
-│   ├── excluir_album.php
-│   └── excluir_faixa.php
-│
-├── includes/
-│   ├── bootstrap.php
-│   ├── config.php
-│   ├── session.php
-│   ├── action_helper.php
-│   ├── header.php
-│   ├── musicbrainz.php
-│   └── footer.php
-│
-├── services/
-│   └── albumService.php
-│
-├── assets/
-│   ├── css/
-│   ├── js/
-│   └── imagens
-│
-└── docs/
----
-🔥 DECISÃO ARQUITETURAL MAIS IMPORTANTE
-✅ bootstrap.php virou o coração do sistema
+├─ app/
+│  ├─ actions/
+│  ├─ docs/
+│  ├─ includes/
+│  ├─ services/
+│  └─ .htaccess
+├─ public/
+│  ├─ actions/
+│  ├─ admin/
+│  ├─ assets/
+│  ├─ uploads/
+│  ├─ _init.php
+│  ├─ album.php
+│  ├─ dash.php
+│  ├─ index.php
+│  ├─ login.php
+│  └─ logout.php
+├─ storage/
+├─ .env
+└─ README.md
 
-Todo endpoint agora começa com:
-    
-    require "../includes/bootstrap.php";
+🔥 DECISÃO ARQUITETURAL MAIS IMPORTANTE
+✅ bootstrap.php virou o Kernel do Sistema
+
+Todo endpoint inicia com:
+
+require "../includes/bootstrap.php";
+
 
 O bootstrap centraliza:
 
 conexão PDO
 sessão
 helpers globais
-base_url
 segurança
+config
+ambiente
 padronização
 
-👉 Isso transforma scripts soltos em aplicação.
----
-🧩 CAMADAS DO SISTEMA
----
-1️⃣ Pages (interface)
+👉 Scripts PHP deixaram de existir.
+👉 Agora existe uma aplicação.
 
-Arquivos:
+🧩 CAMADAS DO SISTEMA
+1️⃣ Pages (Views)
+
+Exemplos:
 
 index.php
 album.php
 dash.php
 
+
 Responsabilidade:
 
 ✔ renderizar
 ✔ chamar services
-✔ mostrar dados
+✔ exibir estado
 
-❌ NÃO acessam banco diretamente (regra nova).
----
-2️⃣ Services (regra de negócio)
+PROIBIDO:
 
-    albumService.php
+❌ acessar banco
+❌ conter regra de domínio
 
-Responsável por:
+2️⃣ Services (Domínio Real)
+
+Exemplos:
+
+albumService.php
+AlbumStreamingService.php
+
+
+Responsáveis por:
 
 queries
 cálculos
 agregações
-lógica do sistema
+regras do produto
 
-👉 Aqui mora a inteligência.
----
-3️⃣ Actions (controladores)
+👉 A inteligência vive aqui.
 
-Pasta criada:
-    /actions
+3️⃣ Actions (Eventos do Sistema)
+
+Localização:
+
+public/actions/ → endpoints públicos
+app/actions/    → lógica privada
+
 
 Responsabilidade:
-    ✔ receber POST
-    ✔ validar segurança
-    ✔ executar ação
-    ✔ retornar JSON
 
-NUNCA renderizam HTML.
+✔ receber POST
+✔ validar segurança
+✔ chamar Service
+✔ redirecionar ou retornar JSON
 
----
-Actions atuais:
+Nunca:
 
-registrar_reproducao.php
-    registra escuta
-    retorna JSON
+❌ renderizam HTML
+❌ possuem regra de negócio
+❌ acessam SQL direto
 
-remover_reproducao.php
-    remove escuta
-    retorna JSON
+🧠 NOVO CONCEITO INTRODUZIDO
+Actions são EVENTOS
 
-adicionar_dash.php
-    adiciona álbum à dashboard
+Actions deixaram de ser páginas PHP.
 
-remover_dash.php
-    remove da dashboard
+Agora representam:
 
-salvar_avaliacao.php ⭐ (arquivo mais avançado)
-    
-    Responsável por:
+POST salvar_streaming
+POST salvar_avaliacao
+POST adicionar_dash
+POST toggle_favorito
 
-    salvar nota
-    marcar favorita
-    garantir reprodução mínima
-    recalcular progresso do álbum
-    retornar estado atualizado via JSON
-👉 já preparado para AJAX.
 
----
+Fluxo oficial:
+
+Request → Action → Service → Estado → Redirect/JSON
+
+🔐 PADRÃO OFICIAL DE ACTIONS
+
+Toda Action obrigatoriamente:
+
+require bootstrap
+
+verificarLogin();
+verificarAdmin(); // quando necessário
+validarCSRF();
+
+validar dados
+executar service
+
+redirect + exit;
+
+
+Regra mental:
+
+Recebe → Valida → Executa → Sai
+
+🔐 SEGURANÇA CONSOLIDADA
+
+Proteções ativas:
+
+✅ sessão obrigatória
+✅ CSRF
+✅ POST obrigatório
+✅ prepared statements
+✅ isolamento public/app
+
+CSRF virou Guard Pattern
+
+Não retorna boolean.
+
+validarCSRF(...)
+
+
+Se inválido:
+
+👉 execução é interrompida.
+
+🧠 MODELO PUBLIC → APP
+
+Separação definitiva:
+
+app/      → privado (domínio)
+public/   → web root
+
+
+Isso eliminou:
+
+❌ acesso direto a lógica interna
+❌ URLs quebradas
+❌ vazamento arquitetural
+
 🗄️ MODELO DE DADOS (CONCEITUAL)
 
+Principais entidades:
+
 albuns
-    id, Primária, int(11)
-    banda_id, Índice, int(11)
-    titulo, Índice, varchar(200), utf8mb4_unicode_ci
-    ano, int(11)
-    capa, varchar(255), utf8mb4_unicode_ci
-    criado_por, Índice, int(11)
-    mbid, varchar(50), utf8mb4_unicode_ci
-
 bandas
-    id Primária	int(11)
-    nome	varchar(255)	utf8mb4_unicode_ci
-    slug	varchar(255)	utf8mb4_unicode_ci	
-    imagem	varchar(255)	utf8mb4_unicode_ci
-    criado_em	timestamp	
-    ano_formacao	year(4)	
-    cidade	varchar(150)	utf8mb4_unicode_ci
-    nome_normalizado Índice	varchar(255)	utf8mb4_unicode_ci	
-
-
 faixas
-    id Primária	int(11)
-    album_id Índice	int(11)
-    disco	int(11)
-    numero	int(11)
-    nome	varchar(200)	utf8mb4_unicode_ci	
-    duracao	varchar(10)	utf8mb4_unicode_ci	
-    total_ouvidas	int(11)
-
 reproducoes
-    id Primária	int(11)
-    usuario_id Índice	int(11)	
-    faixa_id Índice	int(11)
-    data_hora	datetime	
-
 avaliacoes
-    id Primária	int(11)
-    usuario_id Índice	int(11)
-    faixa_id Índice	int(11)
-    nota	decimal(2,1)	
-    favorita	tinyint(1)
-
 usuario_dash
-    id Primária	int(11)
-    usuario_id Índice	int(11)	
-    album_id Índice	int(11)	
-
-banda_genero
-    banda_id Primária	int(11)	
-    genero_id PrimáriaÍndice	int(11)	
-
-generos
-    id Primária	int(11)
-    nome Índice	varchar(100)	utf8mb4_unicode_ci
-    slug	varchar(150)	utf8mb4_unicode_ci	
-    ativo	tinyint(1)
-
 progresso_album
-    id Primária	int(11)	
-    usuario_id Índice	int(11)	
-    album_id Índice	int(11)
-    progresso	int(11)	
-
 usuarios
-    id Primária	int(11)
-    nome	varchar(100)
-    email Índice	varchar(150)
-    senha	varchar(255)
-    tipo	enum('admin', 'usuario')
-
----
+generos
 🧠 REGRA CENTRAL DO PRODUTO
+Progresso Musical
+Ação	Peso
+Ouviu	50%
+Avaliou	+50%
 
-COMO FUNCIONA O PROGRESSO
-Cada faixa contribui:
-    Ação        Peso
-    Ouviu       50%
-    Avaliou     +50%
+Faixa completa:
 
-Resultado:
-    Faixa completa = ouviu + avaliou
-O progresso do álbum:
-    (contribuição total / nº de faixas) * 100
+ouviu + avaliou
 
-👉 Isso é design de produto, não só código.
 
----
-🔐 PADRÃO DE SEGURANÇA ADOTADO
+Progresso do álbum:
 
-Toda action segue:
-    verificarLogin();
-    validarPost();
-    validarCSRF();
+(contribuição total / nº faixas) * 100
 
-Proteções:
-    ✅ CSRF
-    ✅ método HTTP correto
-    ✅ sessão obrigatória
-    ✅ prepared statements PDO
 
----
+👉 decisão de design de produto, não técnica.
+
+🎧 NOVO DOMÍNIO INTRODUZIDO
+Sistema de Streaming de Álbuns
+Objetivo
+
+Adicionar links externos abaixo da capa do álbum:
+
+🎵 Ouça este álbum
+[ Spotify ]
+[ Qobuz ]
+
+Decisão Arquitetural Crítica
+
+Streaming não pertence ao álbum.
+
+Novo domínio:
+
+Album
+   ↳ StreamingLinks
+
+
+Evita:
+
+❌ alterar schema no futuro
+❌ acoplamento com plataformas
+❌ colunas infinitas
+
+Nova Tabela
+album_streaming
+
+
+Campos:
+
+id
+album_id
+plataforma
+url
+criado_em
+
+Princípio Introduzido
+Plataforma é Dado, não Código
+
+Sistema aceita automaticamente:
+
+spotify
+qobuz
+apple_music
+deezer
+youtube_music
+tidal
+bandcamp
+soundcloud
+
+
+sem refactor.
+
+Nova Service Layer
+app/services/AlbumStreamingService.php
+
+
+Responsabilidades:
+
+salvarLinksStreaming()
+buscarLinksStreaming()
+
+
+Regra absoluta:
+
+Action → Service → Banco
+
+
+Nunca:
+
+Action → SQL ❌
+
+Integração com album.php
+
+A página passou a:
+
+buscar links via Service
+renderizar dinamicamente
+exibir apenas links existentes
+permitir edição admin
+🧱 CORREÇÕES ESTRUTURAIS IMPORTANTES
+✔ Erro 404 Actions
+
+Solução:
+
+public/actions/ = endpoint
+app/actions/    = lógica
+
+
+Criado proxy público.
+
+✔ Bootstrap Idempotente
+
+Correção:
+
+defined('BASE_PATH') or define(...);
+
+
+Bootstrap pode ser carregado múltiplas vezes sem quebrar.
+
+✔ Erro Fatal CSRF
+
+Função correta:
+
+validarCSRF()
+
+
+Não:
+
+validarCSRFToken()
+
+🔒 REGRA GLOBAL ADICIONADA
+
+Adicionar ao docs/regras.txt:
+
+26. PADRÃO DE ACTIONS
+
+Actions não possuem interface.
+Actions não possuem regra de domínio.
+Actions apenas disparam Services.
+
 🎨 FRONTEND
+
 Estado atual:
 
-    grid responsivo
-    cards de álbum
-    barra de progresso
-    tema claro (index)
-    tema dark (dash)
+grid responsivo
+cards de álbum
+barra de progresso
+tema claro + dark
 
-Decisão:
-👉 frontend não é prioridade agora.
+Decisão oficial:
 
----
-🚀 ESTADO REAL DO PROJETO
+👉 frontend NÃO é prioridade.
 
-Você já tem:
-    ✅ sistema funcional
-    ✅ arquitetura separada
-    ✅ padrão profissional de actions
-    ✅ regras de domínio claras
-    ✅ backend pronto pra crescer
-    ✅ base para AJAX
+🧠 ESTADO ARQUITETURAL ATUAL
 
-Isso já é nível júnior pleno de backend.
+O Breve-Sonoro agora possui:
 
----
-⚠️ LIMITAÇÃO ATUAL (A REAL)
+✅ Kernel arquitetural
+✅ Segurança profissional
+✅ Services como domínio real
+✅ Actions padronizadas
+✅ Separação Public/App
+✅ Streaming extensível
+✅ Guard Security
+✅ Base pronta para AJAX
+✅ Modelo DDD-Lite emergente
+
+🧱 EVOLUÇÃO DO SISTEMA
+Bootstrap   → Kernel
+Session     → Autenticação
+CSRF        → Guard Security
+Config      → Ambiente
+Actions     → Eventos
+Services    → Domínio
+Views       → Representação
+Streaming   → Extensão de Domínio
+
+⚠️ LIMITAÇÃO REAL DO PROJETO
 
 Não é código.
 
 É:
 
-👉 memória arquitetural do projeto.
+👉 memória arquitetural.
 
-Por isso nasce o próximo passo:
+Por isso existe:
 
----
-📚 docs/regras.txt (OBRIGATÓRIO)
+docs/regras.txt
 
-Esse arquivo vira o cérebro externo do projeto.
 
-Sempre que abrir um novo chat, você cola ele.
----
+Ele é o cérebro externo do sistema.
+
+Sempre iniciar novos chats com ele.
+
+🚀 PRÓXIMO PASSO NATURAL
+
+No próximo chat:
+
+👉 Auditoria Final das Views
+
+Objetivo:
+
+eliminar regras escondidas no HTML
+impedir decisões de domínio na interface
+consolidar definitivamente:
+✅ BREVE-SONORO = DDD-Lite PHP APPLICATION
+
+E vou te dizer algo importante agora:
+
+Você não está mais construindo um site.
+
+Você já está mantendo um sistema.
+
+O próximo salto não é técnico —
+é mental:
+
+👉 você virou o arquiteto do Breve-Sonoro.
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+-------------------------------------------------------------------------
 
 BREVE-SONORO — REGRAS DO PROJETO
 
@@ -400,6 +516,58 @@ O valor do projeto está na lógica do sistema.
 Se surgir dúvida estrutural:
 → criar Service
 → não colocar lógica na Page
+
+11. [INDEX.PHP]
+
+- Migrado para uso do Kernel (bootstrap.php)
+- Removidos includes diretos de config e session
+- Paths ajustados para estrutura /app + /public
+- Página autenticada validada
+- Definido refactor futuro: query mover para albumService
+
+12. LOGIN.PHP AUDITADO
+
+- removidos includes diretos
+- integrado ao bootstrap
+- sessão regenerada após login
+- CSRF aplicado
+- sanitização de input
+- proteção XSS aplicada
+
+13. RESUMO REGISTRADO (MEMÓRIA DE DEPLOY)
+ARQUIVO: public/index.php
+
+STATUS: ✅ APROVADO
+
+Ajustes realizados:
+- validação explícita do id
+- caminho absoluto uploads
+- revisão segurança XSS
+- bootstrap correto
+
+Regras consolidadas:
+✔ páginas públicas apenas em /public
+✔ bootstrap obrigatório
+✔ htmlspecialchars em toda saída
+✔ sessão obrigatória
+
+14. ARQUIVO: public/album.php
+
+STATUS: 🔧 AJUSTADO PARA PRODUÇÃO
+
+Correções obrigatórias:
+✔ corrigido require bootstrap
+✔ corrigido header/footer paths
+✔ removido debug ativo
+✔ validação segura do GET id
+✔ caminho absoluto uploads
+
+Regras adicionadas:
+✔ nenhuma página pública usa includes locais
+✔ nunca usar $_GET direto
+✔ debug nunca vai para produção
+
+
 ---
 
 
@@ -410,3 +578,5 @@ Se surgir dúvida estrutural:
             Segue resumo e regras do sistema:
             [cole o resumo + regras.txt]
             Quero começar a implementar AJAX real.
+
+

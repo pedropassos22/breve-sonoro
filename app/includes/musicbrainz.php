@@ -265,6 +265,8 @@ function salvarFaixasAlbum($pdo, $album_id, $faixas) {
 }
 
 
+
+
 function baixarCapaMusicBrainz($mbid, $titulo, $bandaNome) {
 
     $releaseMBID = buscarReleaseDoReleaseGroup($mbid);
@@ -531,4 +533,24 @@ function buscarCapasFanart($bandaNome, $albumNome) {
     }
 
     return $capas;
+}
+
+
+function obterUrlCapaMusicBrainz($mbid) {
+
+    if (empty($mbid)) {
+        return null;
+    }
+
+    // Cover Art Archive oficial
+    $url = "https://coverartarchive.org/release-group/$mbid/front-500";
+
+    // testa se existe
+    $headers = @get_headers($url);
+
+    if ($headers && strpos($headers[0], '200') !== false) {
+        return $url;
+    }
+
+    return null;
 }

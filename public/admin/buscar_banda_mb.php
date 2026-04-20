@@ -1,22 +1,27 @@
 <?php
 
-require "includes/musicbrainz.php";
+require __DIR__ . '/../../app/includes/bootstrap.php';
+
+verificarLogin();
+verificarAdmin();
+
+require BASE_PATH . '/app/includes/musicbrainz.php';
 
 $resultado = null;
 
-if (!empty($_GET['banda'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['banda'])) {
 
-    $banda = $_GET['banda'];
+    $banda = trim($_GET['banda']);
 
-    $resultado = buscarBandaMusicBrainz($banda);
-
+    if ($banda !== '') {
+        $resultado = buscarBandaMusicBrainz($banda);
+    }
 }
-
 ?>
 
 <h2>Buscar Banda no MusicBrainz</h2>
 
-<form>
+<form method="GET">
 
 Nome da banda:
 <input type="text" name="banda">
@@ -33,14 +38,14 @@ Nome da banda:
 
 Ano de formação:
 <?php
-echo $resultado['ano_formacao'] ?? "Não informado";
+echo htmlspecialchars($resultado['ano_formacao'] ?? "Não informado");
 ?>
 
 <br><br>
 
 Cidade / País:
 <?php
-echo $resultado['cidade'] ?? "Não informado";
+echo htmlspecialchars($resultado['cidade'] ?? "Não informado");
 ?>
 
 <br><br>

@@ -1,19 +1,21 @@
 <?php
-require "../includes/bootstrap.php";
+require __DIR__ . '/../../app/includes/bootstrap.php';
 
 verificarLogin();
 validarPost();
 validarCSRF($_POST['csrf_token'] ?? '');
 
 
+
 $album_id = (int) ($_POST['album_id'] ?? 0);
 $usuario_id = $_SESSION['usuario_id'];
 
+
 try {
-    adicionarNaDash($pdo, $usuario_id, $album_id);
+    removerDaDash($pdo, $usuario_id, $album_id);
 } catch (Exception $e) {
     exit($e->getMessage());
 }
 
-header("Location: ../album.php?id=" . $album_id);
+header("Location: " . BASE_URL . "album.php?id=" . $album_id);
 exit();

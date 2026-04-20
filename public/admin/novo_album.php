@@ -1,7 +1,5 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
-require "includes/musicbrainz.php";
+require __DIR__ . '/../_init.php';
 
 // Só pode acessar se estiver logado
 verificarLogin();
@@ -39,38 +37,6 @@ verificarAdmin();
 
     $titulo    = trim($_POST['titulo']);
     $banda_id  = $_POST['banda_id'];
-
-    // se banda não foi selecionada mas veio do MusicBrainz
-if (empty($banda_id) && !empty($banda_nome_importada)) {
-
-    // verificar se banda já existe
-    $stmt = $pdo->prepare("
-        SELECT id FROM bandas 
-        WHERE nome = ?
-        LIMIT 1
-    ");
-
-    $stmt->execute([$banda_nome_importada]);
-    $bandaExistente = $stmt->fetch();
-
-    if ($bandaExistente) {
-
-        // usar banda existente
-        $banda_id = $bandaExistente['id'];
-
-    } else {
-
-        // criar nova banda automaticamente
-        $stmt = $pdo->prepare("
-            INSERT INTO bandas (nome)
-            VALUES (?)
-        ");
-
-        $stmt->execute([$banda_nome_importada]);
-
-        $banda_id = $pdo->lastInsertId();
-    }
-}
 
     // se banda não foi selecionada mas veio do MusicBrainz
     if (empty($banda_id) && !empty($banda_nome_importada)) {
@@ -154,79 +120,36 @@ if ($bandaExistente) {
         $mensagem = "O ano não pode ser maior que o ano atual.";
     }
 
-
-
-    
 $capa_nome = null;
 
-    // 🔥 SE NÃO ENVIAR CAPA → TENTA BAIXAR DO MUSICBRAINZ
-    if (empty($_FILES['capa']['name']) && !empty($mbid)) {
+/*
+================================
+2️⃣ FALLBACK → UPLOAD MANUAL
+================================
+*/
 
-        // buscar nome da banda
-        // tentar pegar nome da banda
-            $bandaNome = "";
-
-            // se já selecionou banda existente
-            if (!empty($banda_id)) {
-
-                $stmtBanda = $pdo->prepare("SELECT nome FROM bandas WHERE id = ?");
-                $stmtBanda->execute([$banda_id]);
-                $banda = $stmtBanda->fetch();
-
-                if ($banda) {
-                    $bandaNome = $banda['nome'];
-                }
-
-            }
-
-            // se veio do MusicBrainz
-            if (empty($bandaNome) && !empty($banda_nome_importada)) {
-                $bandaNome = $banda_nome_importada;
-            }
-
-            $capa_nome = baixarCapaMusicBrainz($mbid, $titulo, $bandaNome);
-
-        if (!$capa_nome) {
-            $mensagem = "Não foi possível baixar a capa automaticamente.";
-        }
-
-    } elseif (empty($_FILES['capa']['name'])) {
-
-        $mensagem = "A capa do álbum é obrigatória.";
-
-    } else {
+if (!$capa_nome && !empty($_FILES['capa']['name'])) {
 
     $arquivoTmp = $_FILES['capa']['tmp_name'];
 
     $info = getimagesize($arquivoTmp);
 
     if ($info === false) {
+
         $mensagem = "Arquivo enviado não é uma imagem válida.";
+
     } else {
 
         $largura  = $info[0];
         $altura   = $info[1];
         $mime     = $info['mime'];
 
-        // 🔥 VALIDAR TAMANHO MÍNIMO
-        // 🔥 VALIDAR TAMANHO MÍNIMO
         if ($largura < 500 || $altura < 500) {
-
             $mensagem = "A imagem deve ter no mínimo 500x500 pixels.";
-
-        // 🔥 VALIDAR TAMANHO MÁXIMO
-        } elseif ($largura > 2000 || $altura > 2000) {
-
-            $mensagem = "A imagem não pode ser maior que 2000x2000 pixels.";
-
-        // 🔥 VALIDAR PROPORÇÃO 1:1
         } elseif ($largura !== $altura) {
-
-            $mensagem = "A imagem deve ser quadrada (proporção 1:1).";
-
+            $mensagem = "A imagem deve ser quadrada (1:1).";
         } else {
 
-            // 🔥 CRIAR IMAGEM ORIGINAL
             switch ($mime) {
                 case 'image/jpeg':
                     $imagemOriginal = imagecreatefromjpeg($arquivoTmp);
@@ -238,60 +161,35 @@ $capa_nome = null;
                     $imagemOriginal = imagecreatefromwebp($arquivoTmp);
                     break;
                 default:
-                    $mensagem = "Formato de imagem não permitido.";
                     $imagemOriginal = false;
+                    $mensagem = "Formato não permitido.";
             }
 
             if ($imagemOriginal) {
 
                 $novoTamanho = 500;
 
-                $imagemRedimensionada = imagecreatetruecolor($novoTamanho, $novoTamanho);
+                $imagemRedimensionada =
+                    imagecreatetruecolor($novoTamanho, $novoTamanho);
 
                 imagecopyresampled(
                     $imagemRedimensionada,
                     $imagemOriginal,
-                    0, 0, 0, 0,
-                    $novoTamanho, $novoTamanho,
-                    $largura, $altura
+                    0,0,0,0,
+                    $novoTamanho,$novoTamanho,
+                    $largura,$altura
                 );
 
-                // 🔥 Buscar nome da banda
-                $stmtBanda = $pdo->prepare("SELECT nome FROM bandas WHERE id = ?");
-                $stmtBanda->execute([$banda_id]);
-                $banda = $stmtBanda->fetch();
+                $capa_nome =
+                    "uploads/capas/" .
+                    uniqid("capa_", true) .
+                    ".webp";
 
-                $nomeBase = $titulo . $banda['nome'];
-
-
-                // remover espaços
-                $nomeBase = str_replace(' ', '', $nomeBase);
-
-                // remover acentos
-                $nomeBase = iconv('UTF-8', 'ASCII//TRANSLIT', $nomeBase);
-
-                // remover caracteres especiais
-                $nomeBase = preg_replace('/[^A-Za-z0-9]/', '', $nomeBase);
-
-                // deixar tudo minúsculo
-                $nomeBase = strtolower($nomeBase);
-
-                $capa_nome = $nomeBase . ".webp";
-
-
-                $destino = __DIR__ . "/uploads/capas/" . $capa_nome;
-
-                // 🔥 Se já existir arquivo com mesmo nome → erro
-                if (file_exists($destino)) {
-                    $mensagem = "Já existe uma capa com esse nome. Verifique o título e artista.";
-                }
-
-
-                // 🔥 SALVA EM WEBP COM QUALIDADE 80
-                if (empty($mensagem)) {
-                imagewebp($imagemRedimensionada, $destino, 80);
-                 }
-
+                imagewebp(
+                    $imagemRedimensionada,
+                    __DIR__ . "/" . $capa_nome,
+                    80
+                );
 
                 imagedestroy($imagemOriginal);
                 imagedestroy($imagemRedimensionada);
@@ -299,6 +197,9 @@ $capa_nome = null;
         }
     }
 }
+
+
+
 
 
 
@@ -316,7 +217,8 @@ $capa_nome = null;
         }
 
 
-if (empty($mensagem) && $capa_nome !== null) {
+if (empty($mensagem)) {
+
 
     $stmt = $pdo->prepare("
     INSERT INTO albuns (titulo, banda_id, ano, criado_por, capa, mbid)

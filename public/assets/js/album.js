@@ -18,7 +18,14 @@ document.querySelectorAll(".star-rating").forEach(rating => {
             const metade = e.clientX - rect.left < rect.width / 2;
 
             let valorBase = parseInt(this.dataset.value);
-            let valor = metade ? valorBase - 0.5 : valorBase;
+            let valor;
+
+            if (valorBase === 1 && metade) {
+                valor = null; // 🔥 NÃO CLASSIFICADO (CORRETO)
+            } else {
+                valor = metade ? valorBase - 0.5 : valorBase;
+            }
+
 
             atualizarEstrelas(stars, valor);
         });
@@ -33,25 +40,35 @@ document.querySelectorAll(".star-rating").forEach(rating => {
             const metade = e.clientX - rect.left < rect.width / 2;
 
             let valorBase = parseInt(this.dataset.value);
-            let valor = metade ? valorBase - 0.5 : valorBase;
+            let valor;
 
+            if (valorBase === 1 && metade) {
+                valor = 0; // 🔥 reset total
+            } else {
+                valor = metade ? valorBase - 0.5 : valorBase;
+}
             notaAtual = valor;
-            rating.dataset.nota = valor;
+            rating.dataset.nota = valor ?? 0;
 
             atualizarEstrelas(stars, valor);
 
-            let form = rating.closest("form");
-            let formData = new FormData(form);
-            formData.append("nota", valor);
+            let row = rating.closest(".track-row");
+            let faixaId = row.querySelector("input[name='faixa_id']").value;
+
+            let formData = new FormData();
+            formData.append("faixa_id", faixaId);
+            formData.append("nota", valor === null ? "" : valor);
             formData.append("csrf_token", CSRF_TOKEN);
 
 
-fetch(BASE_URL + "actions/salvar_avaliacao.php", { method: "POST", body: formData })
-    .then(() => {
+        fetch(BASE_URL + "actions/salvar_avaliacao.php", { 
+            method: "POST", 
+            body: formData 
+        })
+        .then(res => res.text())
+        .then(res => {
+            console.log("AVALIACAO:", res);
         let row = rating.closest(".track-row");
-        let heart = row.querySelector(".heart-btn");
-
-        if (heart) heart.classList.remove("disabled");
 
         atualizarBarraProgresso();        
     });
@@ -66,17 +83,23 @@ fetch(BASE_URL + "actions/salvar_avaliacao.php", { method: "POST", body: formDat
 function atualizarEstrelas(stars, nota) {
 
     stars.forEach(star => {
+        star.classList.remove("filled", "half");
+    });
+
+    // 🔥 se for null ou 0 → não classificado
+    if (!nota) return;
+
+    stars.forEach(star => {
 
         const valor = parseInt(star.dataset.value);
-
-        star.classList.remove("filled", "half");
 
         if (valor <= Math.floor(nota)) {
             star.classList.add("filled");
         }
-        else if (Math.abs((valor - 0.5) - nota) < 0.01) {
+        else if (valor - 0.5 === nota) {
             star.classList.add("half");
         }
+
     });
 }
 
@@ -89,7 +112,7 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
 
     btn.addEventListener("click", function () {
 
-        if (this.classList.contains("disabled")) return;
+        
 
         this.classList.toggle("active");
 
@@ -137,7 +160,12 @@ document.querySelectorAll(".heart-btn").forEach(btn => {
                 method: "POST",
                 body: formData
             })
-            .then(() => atualizarBarraProgresso());
+            .then(res => res.text())
+            .then(res => {
+                console.log("RESPOSTA:", res);
+                atualizarBarraProgresso();
+            })
+            .catch(err => console.error("ERRO:", err));
         });
     });
 

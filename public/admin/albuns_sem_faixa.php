@@ -1,6 +1,5 @@
 <?php
-require "../includes/config.php";
-require "../includes/session.php";
+require dirname(__DIR__, 2) . '/app/includes/bootstrap.php';
 
 verificarLogin();
 verificarAdmin();

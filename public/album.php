@@ -1,8 +1,7 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-require "includes/bootstrap.php";
+
+require __DIR__ . '/../app/includes/bootstrap.php';
 
 verificarLogin();
 
@@ -10,7 +9,12 @@ if (!isset($_GET['id'])) {
     exit("Álbum não especificado.");
 }
 
-$album_id = $_GET['id'];
+$album_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+if (!$album_id) {
+    exit("Álbum inválido.");
+}
+
 
 // ==========================
 // 1️⃣ BUSCAR O ÁLBUM
@@ -61,19 +65,30 @@ foreach ($faixas as $faixa) {
 }
 
 // ==========================
-// 3️⃣ BUSCAR PROGRESSO SALVO
+//3️⃣ CALCULAR PROGRESSO DO ÁLBUM
 // ==========================
 
-$progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
+$progresso_percent = calcularProgressoAlbum($pdo, $usuario_id, $album_id);
+
+// ==========================
+// LINKS DE STREAMING
+// ==========================
+
+$streamingLinks = buscarLinksStreaming($pdo, $album_id);
 
 
 ?>
 
-<?php include 'includes/header.php'; ?>
+<?php require __DIR__ . '/../app/includes/header.php';?>
+
+    <script>
+    const BASE_URL = "/";
+    const CSRF_TOKEN = "<?= gerarCSRFToken() ?>";
+    </script>
 
 <div class="main-content">
 
-    <div class="album-container" data-album-id="<?php echo $album_id; ?>">
+    <div class="album-container" data-album-id="<?php echo (int)$album_id; ?>">
 
         <div class="album-left">
 
@@ -83,22 +98,22 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
 
                     <div class="album-titles">
                         <div class="album-band">
-                            <?php echo htmlspecialchars($album['banda_nome']); ?>
+                            <?php echo htmlspecialchars($album['banda_nome'] ?? ''); ?>
                         </div>
 
                         <div class="album-name">
-                            <?php echo htmlspecialchars($album['titulo']); ?>
+                            <?php echo htmlspecialchars($album['titulo'] ?? ''); ?>
                         </div>
 
                         <div class="album-meta">
                             <span class="album-year">
-                                <?php echo htmlspecialchars($album['ano']); ?>
+                                <?php echo htmlspecialchars($album['ano'] ?? ''); ?>
                             </span>
 
                             <?php if ($estaNaDash): ?>
                                 <form method="POST" action="<?php echo BASE_URL; ?>actions/remover_dash.php">
                                     <input type="hidden" name="album_id" value="<?php echo $album_id; ?>">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                    <?= csrfField() ?>
                                     <button type="submit" class="dash-btn dash-remove">
                                         Dash-
                                     </button>
@@ -106,7 +121,7 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
                             <?php else: ?>
                                 <form method="POST" action="<?php echo BASE_URL; ?>actions/adicionar_dash.php">
                                     <input type="hidden" name="album_id" value="<?php echo $album_id; ?>">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                    <?= csrfField() ?>
                                     <button type="submit" class="dash-btn">
                                         Dash+
                                     </button>
@@ -118,7 +133,7 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
                     <div class="album-progress">
                         <div class="album-progress-bar">
                             <div class="album-progress-fill"
-                                 style="width: <?php echo $progresso_percent; ?>%;">
+                                 style="width: <?php echo (int)$progresso_percent; ?>%;">
                             </div>
                         </div>
                         <div class="album-progress-text">
@@ -154,11 +169,11 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
                         </div>
 
                         <div class="track-name">
-                            <?php echo htmlspecialchars($faixa['nome']); ?>
+                            <?php echo htmlspecialchars($faixa['nome'] ?? ''); ?>
                         </div>
 
                         <div class="track-duration">
-                            <?php echo htmlspecialchars($faixa['duracao']); ?>
+                            <?php echo htmlspecialchars($faixa['duracao'] ?? ''); ?>
                         </div>
 
                         <div class="track-actions">
@@ -188,7 +203,7 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
                             <!-- FAVORITO -->
 
                             <span 
-                                class="heart-btn<?php echo $faixa['favorita'] ? ' active' : ''; ?><?php echo empty($faixa['nota']) ? ' disabled' : ''; ?>"
+                                class="heart-btn<?php echo $faixa['favorita'] ? ' active' : ''; ?>"
                                 data-faixa-id="<?php echo $faixa['id']; ?>"
                                 >❤
                             </span>
@@ -207,13 +222,46 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
         </div>
 
         <!-- CAPA -->
-<div class="album-cover">
+    <div class="album-cover">
 
-    <img src="uploads/capas/<?php echo htmlspecialchars($album['capa']); ?>">
+        <?php $src = capaUrl(
+            $album['mbid'] ?? null,
+            $album['capa'] ?? null
+            );
+        ?>
+        
+        <img
+            src="<?= htmlspecialchars($src) ?>"
+            loading="lazy"
+            onerror="this.src='/uploads/capas/default.jpg'"
+        >
+
+                <?php if (!empty($streamingLinks)): ?>
+
+                <div class="album-streaming">
+
+                    <?php foreach ($streamingLinks as $link): ?>
+
+                        <a
+                            href="<?= htmlspecialchars($link['url']) ?>"
+                            target="_blank"
+                            class="streaming-btn streaming-<?= htmlspecialchars($link['slug']) ?>"
+                        >
+                            Ouça no <?= htmlspecialchars($link['nome']) ?>
+                        </a>
+
+                    <?php endforeach; ?>
+
+                </div>
+
+                <?php endif; ?>
+
+
+
 
     <?php if (!empty($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
         <div style="margin-top:12px; text-align:left;" >
-            <a href="nova_faixa.php?album_id=<?php echo $album['id']; ?>" 
+            <a href="/admin/nova_faixa.php?album_id=<?php echo $album['id']; ?>" 
                class="dash-btn">
                 Editar
             </a>
@@ -225,5 +273,5 @@ $progresso_percent = buscarProgressoAlbum($pdo, $usuario_id, $album_id);
 
 </div>
 
-<?php include 'includes/footer.php'; ?>
+<?php require __DIR__ . '/../app/includes/footer.php'; ?>
 

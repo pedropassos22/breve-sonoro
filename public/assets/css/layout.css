@@ -12,9 +12,6 @@ body {
     background-color: #e5e5e5;
 }
 
-
-
-
 /* ============================= */
 /* TOPO */
 /* ============================= */
@@ -56,7 +53,6 @@ body {
     text-decoration: underline;
 }
 
-
 /* ============================= */
 /* CONTEÚDO PRINCIPAL */
 /* ============================= */
@@ -67,11 +63,6 @@ body {
     margin: 0 auto;
     padding: 50px 20px 60px 20px;
 }
-
-
-
-
-
 
 .section-title {
     font-size: 20px;
@@ -89,7 +80,6 @@ body {
     gap: 30px;
 }
 
-
 .album-card {
     text-align: center;
     display: flex;
@@ -105,14 +95,10 @@ body {
     transition: transform 0.25s ease, filter 0.25s ease;    
 }
 
-
 .album-card:hover img {
     transform: scale(1.05);
     filter: brightness(1.05);
 }
-
-
-
 
 .album-card a {
     display: block;
@@ -121,7 +107,6 @@ body {
     overflow: hidden;
     border-radius: 12px;
 }
-
 
 .album-info {
     margin-top: 10px;
@@ -238,11 +223,8 @@ body {
 .album-container {
     display: flex;
     gap: 60px;
-    align-items: flex-start;
+    align-items: stretch;
 }
-
-
-
 
 
 
@@ -314,7 +296,9 @@ body {
     margin-top: 10px;
     width: 100%;
     max-width: 350px;
+    position: relative;
 }
+
 
 .album-progress-bar {
     position: relative;   /* necessário */
@@ -332,11 +316,14 @@ body {
 
 .album-progress-text {
     position: absolute;
-    right: 10px;
-    top: -22px; /* sobe para ficar acima da barra */
+    left: 0;
+    top: -18px;
     font-size: 13px;
     font-weight: 600;
+    color: #333;
 }
+
+
 
 
 
@@ -430,7 +417,11 @@ body {
 
 .album-cover {
     flex-shrink: 0;
-    margin-top: 155px; /* ajusta até alinhar com primeira faixa */
+    margin-top: 160px;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;   /* ← AQUI ESTÁ O FIX */
+    align-items: flex-start;      /* centraliza tudo */
 }
 
 
@@ -567,3 +558,282 @@ body.dash .pagination a {
 body.dash .pagination a:hover {
     background: #666;
 }
+
+
+.album-streaming {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.streaming-btn {
+    background: #111;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-decoration: none;
+    transition: .2s ease;
+}
+
+.streaming-btn:hover {
+    opacity: .75;
+}
+
+/* Preparado para futuro */
+
+.streaming-spotify {
+    background:#1db954;
+}
+
+.streaming-qobuz {
+    background:#000;
+}
+
+
+
+
+
+
+
+
+/* ============================= */
+/* RESPONSIVO (MOBILE) */
+/* ============================= */
+
+@media (max-width: 768px) {
+
+
+    /* ============================= */
+    /* TITULOS DO ALBUM (MOBILE) */
+    /* ============================= */
+
+    .album-band {
+        font-size: 18px;
+    }
+
+    .album-name {
+        font-size: 30px;
+        line-height: 1.2em;
+    }
+
+    .album-year {
+        font-size: 18px;
+    }
+
+
+
+
+
+    /* ============================= */
+    /* ESPAÇAMENTO GERAL */
+    /* ============================= */
+
+    .main-content {
+        padding: 85px 24px 100px 24px; /* MAIS respiro lateral */
+    }
+
+    .album-grid {
+        grid-template-columns: 1fr;
+        gap: 42px; /* MAIS espaço entre álbuns */
+    }
+
+    /* ============================= */
+    /* CAPA (MAIS “AR”) */
+    /* ============================= */
+
+    .album-card a {
+        width: 100%;
+        max-width: 850px;   /* limita o tamanho da capa */
+        margin: 0 auto;     /* centraliza */
+        aspect-ratio: 1 / 1;
+        border-radius: 90px;
+    }
+
+    .album-card img {
+        width: 100%;
+        max-width: 850px;
+        margin: 0 auto;
+        border-radius: 90px;
+        display: block;
+    }
+
+    /* ============================= */
+    /* TEXTO MAIOR */
+    /* ============================= */
+
+    .album-title {
+        font-size: 35px;
+        line-height: 1.35em;
+    }
+
+    .album-artist {
+        font-size: 25px;
+    }
+
+    .album-year-card {
+        font-size: 20px;
+    }
+
+    /* ============================= */
+    /* PROGRESSO */
+    /* ============================= */
+
+    .card-progress-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .card-progress-bar {
+        width: 60%;
+        height: 10px;
+        margin: 0 auto;
+    }
+
+    .card-progress-text {
+        font-size: 14px;
+        margin-top: 8px;
+        text-align: center;
+    }
+
+    /* ============================= */
+    /* TOPBAR */
+    /* ============================= */
+
+    .topbar-container {
+        padding: 0 18px;
+    }
+
+    .menu a,
+    .logout a {
+        margin: 0 6px;
+        font-size: 15px;
+    }
+
+    /* ============================= */
+    /* FOOTER */
+    /* ============================= */
+
+    .footer {
+        padding: 16px 0;
+        font-size: 14px;
+    }
+
+    /* ============================= */
+    /* ALBUM PAGE - MOBILE LAYOUT */
+    /* ============================= */
+
+.album-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 35px;
+}
+
+    .album-cover {
+    order: -1; /* joga para o topo */
+    width: 100%;
+    padding: 0 10px;
+    }
+
+    .album-cover img {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 18px;
+    }
+    .album-header {
+    text-align: center;
+    }
+
+    .album-titles {
+        align-items: center;
+    }
+
+    .album-progress {
+    max-width: 100%;
+    }
+
+.track-list {
+    overflow: visible;
+    height: auto;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+}
+
+.album-left {
+    width: 100%;
+}
+
+
+    /* ============================= */
+/* TRACK LIST MOBILE */
+/* ============================= */
+
+.track-row {
+    display: grid;
+    grid-template-columns: 35px 1fr 50px;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 6px 10px;
+    font-size: 17px;
+    padding: 16px 10px;
+    width: 100%;
+    margin: 0 auto 12px auto;
+}
+
+.track-number {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: left;
+    font-size: 15px;
+    opacity: .6;
+}
+
+.track-name {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.3em;
+}
+
+.track-duration {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+    font-size: 16px;
+    opacity: .65;
+}
+
+.track-actions {
+    grid-column: 1 / span 3;
+    grid-row: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 28px;
+    margin-top: 4px;
+}
+
+.track-actions button,
+.heart-btn,
+.star {
+    font-size: 28px;
+    padding: 8px;
+}
+
+.container-cru {
+    margin-left: 0;
+    margin-top: 20px;
+}
+
+
+}
+

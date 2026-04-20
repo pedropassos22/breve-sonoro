@@ -1,6 +1,5 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
+require __DIR__ . '/../app/includes/bootstrap.php';
 
 verificarLogin();
 
@@ -10,9 +9,8 @@ $usuario_id = $_SESSION['usuario_id'];
 $limite = 18;
 
 // Página atual
-$pagina = isset($_GET['pagina']) && is_numeric($_GET['pagina']) 
-    ? (int) $_GET['pagina'] 
-    : 1;
+$pagina = filter_input(INPUT_GET, 'pagina', FILTER_VALIDATE_INT) ?: 1;
+
 
 if ($pagina < 1) {
     $pagina = 1;
@@ -20,10 +18,16 @@ if ($pagina < 1) {
 
 $offset = ($pagina - 1) * $limite;
 
-$totalStmt = $pdo->query("SELECT COUNT(*) FROM albuns");
-$totalAlbuns = $totalStmt->fetchColumn();
+$totalStmt = $pdo->query("
+SELECT COUNT(*)
+FROM albuns a
+INNER JOIN bandas b ON a.banda_id = b.id
+");
 
-$totalPaginas = ceil($totalAlbuns / $limite);
+$totalAlbuns = (int) $totalStmt->fetchColumn();
+
+$totalPaginas = max(1, ceil($totalAlbuns / $limite));
+
 
 
 
@@ -32,61 +36,34 @@ SELECT
     a.id,
     a.titulo,
     a.ano,
+    a.mbid,
     a.capa,
-    b.nome AS banda_nome,
-
-COALESCE(
-ROUND(
-(
-    SUM(
-        CASE
-            WHEN EXISTS (
-                SELECT 1
-                FROM reproducoes r
-                WHERE r.faixa_id = f.id
-                AND r.usuario_id = :usuario_reproducao
-                LIMIT 1
-            )
-            THEN 0.5 ELSE 0
-        END
-        +
-        CASE
-            WHEN av.nota IS NOT NULL THEN 0.5
-            ELSE 0
-        END
-    )
-    / COUNT(f.id)
-) * 100
-),
-0) AS progresso
+    b.nome AS banda_nome
 
 
 FROM albuns a
 INNER JOIN bandas b ON a.banda_id = b.id
-LEFT JOIN faixas f ON f.album_id = a.id
 
-
-
-LEFT JOIN avaliacoes av
-    ON av.faixa_id = f.id
-    AND av.usuario_id = :usuario_avaliacao
-
-GROUP BY a.id
 ORDER BY a.id DESC
 LIMIT :limite OFFSET :offset
 ");
-
-$stmt->bindValue(':usuario_reproducao', $usuario_id, PDO::PARAM_INT);
-$stmt->bindValue(':usuario_avaliacao', $usuario_id, PDO::PARAM_INT);
 
 $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
 $stmt->execute();
 
-$albuns = $stmt->fetchAll(PDO::FETCH_ASSOC);?>
+$albuns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-<?php include 'includes/header.php'; ?>
+foreach ($albuns as $key => $album) {
+    $albuns[$key]['progresso'] =
+        calcularProgressoAlbum($pdo, $usuario_id, $album['id']);
+}
+
+?>
+
+
+<?php require __DIR__ . '/../app/includes/header.php'; ?>
 
 
 
@@ -101,11 +78,20 @@ $albuns = $stmt->fetchAll(PDO::FETCH_ASSOC);?>
 
 <div class="album-card">
 
-    <a href="album.php?id=<?php echo $album['id']; ?>">
-       <img 
-        src="uploads/capas/<?php echo htmlspecialchars($album['capa'] ?: 'default.jpg'); ?>"
-        loading="lazy"
-        >
+    <a href="album.php?id=<?php echo (int)$album['id']; ?>">
+        <img
+            <?php
+            $src = capaUrl(
+                $album['mbid'] ?? null,
+                $album['capa'] ?? null
+            );
+            ?>
+
+            <img
+                src="<?= htmlspecialchars($src) ?>"
+                loading="lazy"
+                onerror="this.src='/uploads/capas/default.jpg'"
+            >  
     </a>
 
 <div class="album-info">
@@ -208,4 +194,4 @@ $albuns = $stmt->fetchAll(PDO::FETCH_ASSOC);?>
 </div>
 
 <?php endif; ?>
-<?php include 'includes/footer.php'; ?>
+<?php require __DIR__ . '/../app/includes/footer.php'; ?>

@@ -1,24 +1,30 @@
 <?php
 
-require "includes/config.php";
-require "includes/musicbrainz.php";
+require __DIR__ . '/../_init.php';
+
+
+verificarLogin();
+verificarAdmin();
+
+
 
 $resultados = [];
 
-if (!empty($_GET['album'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['album'])) {
 
-    $album = $_GET['album'];
-    $artista = $_GET['artista'] ?? "";
+    $album = trim($_GET['album']);
+    $artista = trim($_GET['artista'] ?? '');
 
-    $resultados = buscarAlbumMusicBrainz($album, $artista);
-
+    if ($album !== '') {
+        $resultados = buscarAlbumMusicBrainz($album, $artista);
+    }
 }
-
 ?>
+
 
 <h2>Buscar álbum no MusicBrainz</h2>
 
-<form>
+<form method="GET">
 
 Álbum:
 <input type="text" name="album">
@@ -41,7 +47,7 @@ Artista:
 $titulo = $r['titulo'] ?? 'Sem título';
 $artista_nome = $r['artista'] ?? 'Desconhecido';
 $ano = $r['ano'] ?? '';
-$mbid = $r['mbid'] ?? '';
+$mbid = htmlspecialchars($r['mbid'] ?? '');
 
 ?>
 
@@ -56,18 +62,12 @@ Ano:
 MBID:
 <?php echo $mbid; ?><br><br>
 
-<a href="teste_faixas.php?mbid=<?php echo $mbid; ?>">
-Testar faixas
-</a>
+
 
 <br><br>
 
-<a href="novo_album.php?
-titulo=<?php echo urlencode($titulo); ?>
-&banda_nome=<?php echo urlencode($artista_nome); ?>
-&ano=<?php echo $ano; ?>
-&mbid=<?php echo $mbid; ?>
-">
+<a href="novo_album.php?titulo=<?php echo urlencode($titulo); ?>&banda_nome=<?php echo urlencode($artista_nome); ?>&ano=<?php echo urlencode($ano); ?>&mbid=<?php echo urlencode($mbid); ?>">
+
 
 
 Importar este álbum

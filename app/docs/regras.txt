@@ -32,3 +32,308 @@ REGRA 11 — PUBLIC ROOT
     Apenas /public é acessível pela web
     Código do sistema fica em /app
     Nada interno pode ser acessado via URL
+
+12. ROOT LIMPO
+    A raiz do projeto não pode conter arquivos PHP executáveis.
+    Somente public/ pode expor páginas web.
+
+13. ARQUIVOS DO USUÁRIO
+    Arquivos exibidos publicamente devem ficar dentro de public/uploads.
+
+14. CAMADAS DE DEPLOY
+    public = interface web
+    app = backend da aplicação
+    storage = dados internos
+
+15. BOOTSTRAP AVANÇADO
+    O bootstrap controla:
+    - timezone
+    - encoding
+    - ambiente (.env)
+    - erros
+    - logs
+    - includes globais
+
+16. SESSÃO
+    - Cookies seguros
+    - SameSite Strict
+    - CSRF obrigatório
+    - Sessão regenerada após login
+
+17. CONFIGURAÇÃO
+    - config.php nunca possui credenciais
+    - Todas as variáveis sensíveis vivem no .env
+    - Deploy não altera código, apenas ambiente
+
+18. ACTIONS
+    Toda action deve:
+    - carregar bootstrap.php
+    - executar validarPost()
+    - obterUsuarioId() obrigatoriamente
+
+19. SERVICES
+    Toda regra de negócio deve viver em services/.
+    Pages e Actions não podem escrever SQL direto
+    quando existir função equivalente no Service.
+
+20. CONSISTÊNCIA DE DOMÍNIO
+    Se uma ação altera estado musical,
+    o Service deve garantir automaticamente
+    a atualização de todas as dependências
+    (progresso, estatísticas, dashboards).
+
+21. ENTRYPOINT WEB
+    Nenhum arquivo PHP público executa lógica antes do bootstrap.
+    A primeira instrução executável deve ser:
+    require bootstrap.php
+
+22. PATHS
+    Nunca usar caminhos relativos frágeis.
+    O bootstrap deve definir constantes globais:
+    APP_PATH
+    PUBLIC_PATH
+    STORAGE_PATH
+
+23. RESPONSABILIDADE DAS CAMADAS
+    Pages:
+    - recebem request
+    - chamam services
+    - exibem dados
+
+    Actions:
+    - recebem eventos
+    - chamam services
+
+    Services:
+    - executam regras
+    - executam SQL
+
+24. Pages nunca incluem arquivos relativos.
+    Sempre usar __DIR__.
+
+25. ENTRYPOINT PATH
+    Todo arquivo público deve carregar o bootstrap usando:
+    require dirname(__DIR__, N) . '/app/includes/bootstrap.php';
+    Nunca usar caminhos relativos frágeis.
+
+26. LINKS DE STREAMING
+
+    Plataformas de streaming são entidades independentes.
+    Álbuns podem possuir zero ou múltiplos links.
+    A View nunca conhece plataformas fixas.
+    Novas plataformas devem funcionar sem alteração estrutural.
+
+27. CONTINUIDADE DE CONVERSA
+
+Chats utilizam apenas CONTEXTO BOOT reduzido.
+A memória arquitetural completa vive em /app/docs.
+O chat nunca deve carregar documentação integral
+
+
+
+
+
+
+
+--------------------------------------
+CHAT GPT - ENXUTANDO O QUE ESTÁ NUMERO ACIMA, AINDA FALTA A PRIMEIRA PARTE
+
+
+Regra 1 — Web Root
+    Apenas /public é acessível pela web.
+    Nenhum PHP executável existe fora dele.
+    Código da aplicação vive em /app.
+
+Regra 2 — Uploads Públicos
+    Arquivos do usuário acessíveis pela web ficam somente em:
+    /public/uploads
+
+Regra 3 — Entrypoint Único
+    Todo arquivo público deve iniciar com:
+    require bootstrap.php;
+    Nenhuma lógica roda antes do bootstrap.
+
+Regra 4 — Bootstrap Central
+    O bootstrap configura ambiente, sessão, erros, logs, encoding, timezone e includes globais.
+
+Regra 5 — Paths Absolutos
+    O bootstrap define:
+        APP_PATH
+        PUBLIC_PATH
+        STORAGE_PATH
+
+Regra 6 — Camadas do Sistema
+    public  → interface web
+    app     → backend
+    storage → dados internos
+
+Regra 7 — Responsabilidade das Camadas
+    Pages: recebem request e exibem dados
+    Actions: recebem eventos
+    Services: executam regras e SQL
+
+Regra 8 — Services Obrigatórios
+    Regras de negócio vivem em /app/services.
+    Pages e Actions não escrevem SQL direto.
+
+Regra 9 — Consistência de Domínio
+    Toda alteração de estado deve atualizar automaticamente suas dependências (progresso, estatísticas, dashboards).
+
+Regra 10 — Padrão de Action
+    Toda Action deve:
+    carregar bootstrap
+    validar POST
+    obter usuário autenticado
+
+Regra 11 — Configuração Segura
+    Credenciais nunca ficam no código.
+    Variáveis sensíveis vivem no .env.
+    Deploy altera ambiente, não código.
+
+Regra 12 — Sessão Segura
+    cookies seguros
+    SameSite Strict
+    CSRF obrigatório
+    regenerar sessão após login
+
+
+--------------------------------------------------------------------------------------------------
+# 🧠 REGRA ARQUITETURAL — Sistema de Avaliações / Interações
+
+## Conceito Central
+
+A tabela `avaliacoes` **não representa apenas notas**.
+
+Ela funciona como um **container de interações do usuário com a faixa**.
+
+Uma interação pode existir mesmo sem avaliação numérica.
+
+---
+
+## 🎯 Princípios
+
+### 1. Independência das ações
+
+Cada ação do usuário é independente:
+
+* ⭐ Nota (avaliação)
+* ❤️ Favorito
+* ▶ Reprodução
+
+Nenhuma ação exige a existência da outra.
+
+---
+
+### 2. Favoritar não exige avaliação nem reprodução
+
+O usuário pode:
+
+* favoritar sem ouvir
+* favoritar sem avaliar
+* avaliar sem favoritar
+* ouvir sem avaliar
+
+---
+
+### 3. Existência do registro `avaliacoes`
+
+Um registro em `avaliacoes` deve existir **sempre que houver qualquer interação significativa**.
+
+Criar registro quando existir:
+
+* nota definida **OU**
+* favorito definido
+
+---
+
+### 4. Remoção do registro
+
+O registro deve ser removido **somente quando não existir nenhuma interação**:
+
+```
+nota === null
+AND
+favorita === null
+```
+
+Neste caso:
+
+```
+DELETE FROM avaliacoes
+```
+
+---
+
+### 5. Updates parciais
+
+Atualizações nunca devem sobrescrever dados não enviados.
+
+Regras:
+
+* se `favorita` não vier no POST → NÃO alterar favorito
+* se `nota` não vier → NÃO alterar nota
+
+Cada campo é atualizado apenas quando explicitamente enviado.
+
+---
+
+### 6. Reprodução automática
+
+A reprodução automática só ocorre quando:
+
+```
+nota > 0
+```
+
+Motivo:
+
+Avaliar implica que o usuário ouviu ao menos uma vez.
+
+Favoritar **não** gera reprodução automática.
+
+---
+
+### 7. Progresso do álbum
+
+O progresso considera apenas:
+
+* faixa ouvida
+* faixa avaliada
+
+Favoritar isoladamente **não contribui para progresso**.
+
+---
+
+## 🧩 Modelo Mental Oficial
+
+```
+avaliacoes = Interactions
+```
+
+Não pensar mais como:
+
+```
+avaliacoes = ratings
+```
+
+---
+
+## 🚫 Anti-Regra (NÃO FAZER)
+
+❌ exigir avaliação para favoritar
+❌ exigir reprodução para favoritar
+❌ sobrescrever campos não enviados
+❌ manter registros vazios em `avaliacoes`
+
+---
+
+## ✅ Objetivo Arquitetural
+
+Separar:
+
+* intenção do usuário
+* consumo do conteúdo
+* julgamento do conteúdo
+
+O sistema registra **comportamento**, não apenas nota.
+------------------------------------------------------

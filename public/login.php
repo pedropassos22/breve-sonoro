@@ -1,23 +1,28 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
+require __DIR__ . "/../app/includes/bootstrap.php";
+
+
 
 // Se já estiver logado, redireciona conforme tipo
-if (isset($_SESSION['usuario_id'])) {
+if (usuarioLogado()) {
 
-    if ($_SESSION['usuario_tipo'] === 'admin') {
+    if (usuarioTipo() === 'admin') {
         header("Location: admin/admin.php");
     } else {
         header("Location: dash.php");
     }
 
-    exit();
+    exit;
 }
 
 
 $erro = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    validarPost();
+    validarCSRF($_POST['csrf_token'] ?? '');
+
 
     $acao = $_POST['acao'];
 
@@ -26,8 +31,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // ==========================
     if ($acao === "login") {
 
-        $email = $_POST['email'];
+        $email = trim($_POST['email']);
         $senha = $_POST['senha'];
+
 
         $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ?");
         $stmt->execute([$email]);
@@ -35,9 +41,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($usuario && password_verify($senha, $usuario['senha'])) {
 
-            $_SESSION['usuario_id'] = $usuario['id'];
+            regenerarSessao();
+
+            $lembrar = isset($_POST['lembrar']);
+
+            $_SESSION['usuario_id']   = $usuario['id'];
             $_SESSION['usuario_nome'] = $usuario['nome'];
             $_SESSION['usuario_tipo'] = $usuario['tipo'];
+            $_SESSION['ultima_atividade'] = time();
+            $_SESSION['lembrar'] = $lembrar;
+
+            if ($lembrar) {
+
+                $token = bin2hex(random_bytes(32));
+
+                setcookie(
+                    'remember_token',
+                    $token,
+                    time() + (86400 * 30),
+                    '/',
+                    '',
+                    isset($_SERVER['HTTPS']),
+                    true
+                );
+
+                $stmt = $pdo->prepare("
+                    UPDATE usuarios
+                    SET remember_token = ?
+                    WHERE id = ?
+                ");
+
+                $stmt->execute([$token, $usuario['id']]);
+            }
 
             if ($usuario['tipo'] === 'admin') {
                 header("Location: admin/admin.php");
@@ -57,9 +92,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // ==========================
     if ($acao === "cadastro") {
 
-        $nome  = $_POST['nome'];
-        $email = $_POST['email'];
+        $nome  = trim($_POST['nome']);
+        $email = trim($_POST['email']);
         $senha = $_POST['senha'];
+
 
         // Verifica se email já existe
         $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
@@ -93,11 +129,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <h2>Login</h2>
 
 <?php if ($erro): ?>
-    <p style="color:red;"><?php echo $erro; ?></p>
+    <p style="color:red;"><?= htmlspecialchars($erro) ?></p>
 <?php endif; ?>
 
+
 <h3>Entrar</h3>
+
 <form method="POST">
+    <?= csrfField() ?>
+
     <input type="hidden" name="acao" value="login">
 
     <label>Email:</label><br>
@@ -105,6 +145,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <label>Senha:</label><br>
     <input type="password" name="senha" required><br><br>
+
+    <label>
+    <input type="checkbox" name="lembrar">
+    Lembrar de mim neste navegador
+    </label>
+    <br><br>
 
     <button type="submit">Entrar</button>
 </form>

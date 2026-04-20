@@ -1,7 +1,9 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
-require "includes/musicbrainz.php";
+require dirname(__DIR__, 2) . '/app/includes/bootstrap.php';
+
+// caminho real das capas
+$uploadDir = PUBLIC_PATH . '/uploads/capas/';
+
 
 
 verificarLogin();
@@ -13,6 +15,27 @@ if (!isset($_GET['album_id'])) {
 
 $album_id = $_GET['album_id'];
 
+$stmtAlbum = $pdo->prepare("
+    SELECT 
+        a.titulo,
+        a.capa,
+        b.nome AS banda
+    FROM albuns a
+    JOIN bandas b ON b.id = a.banda_id
+    WHERE a.id = ?
+");
+
+$stmtAlbum->execute([$album_id]);
+$album = $stmtAlbum->fetch(PDO::FETCH_ASSOC);
+
+$capaUrl = null;
+
+if (!empty($album['capa'])) {
+    $capaUrl = "/uploads/capas/" . $album['capa'];
+}
+
+
+
 $stmt = $pdo->prepare("
     SELECT * FROM faixas
     WHERE album_id = ?
@@ -20,6 +43,13 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$album_id]);
 $faixas = $stmt->fetchAll();
+
+// ==========================
+// STREAMING LINKS
+// ==========================
+
+$plataformas = buscarPlataformasStreaming($pdo);
+$linksSalvos = buscarLinksStreamingIndexados($pdo, $album_id);
 
 
 $mensagem = "";
@@ -69,11 +99,10 @@ if (isset($_POST['salvar_capa'])) {
             // 🔥 Novo nome final
             $novoNome = $bandaLimpa . $albumLimpo . ".webp";
 
-            $pasta = 'uploads/capas/';
-            $caminho = $pasta . $novoNome;
+            $caminho = $uploadDir . $novoNome;
 
-            if (!is_dir($pasta)) {
-                mkdir($pasta, 0755, true);
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
             }
 
             if (move_uploaded_file($_FILES['capa']['tmp_name'], $caminho)) {
@@ -85,7 +114,7 @@ if (isset($_POST['salvar_capa'])) {
 
                 if ($albumAntigo && !empty($albumAntigo['capa'])) {
 
-                    $caminhoAntigo = __DIR__ . "/uploads/capas/" . $albumAntigo['capa'];
+                    $caminhoAntigo = $uploadDir . $albumAntigo['capa'];
 
                     if (file_exists($caminhoAntigo)) {
                         unlink($caminhoAntigo); // apaga a imagem antiga
@@ -157,7 +186,7 @@ if (isset($_POST['salvar_capa_fanart'])) {
 
         $nomeFinal = $nomeBase . "_fanart.webp";
 
-        $destino = __DIR__ . "/uploads/capas/" . $nomeFinal;
+        $destino = $uploadDir . $nomeFinal;
 
         $img = imagecreatefromstring($imagem);
 
@@ -188,6 +217,47 @@ if (isset($_POST['salvar_capa_fanart'])) {
 
     <div class="container-cru">
         <h2>Adicionar Faixa</h2>
+
+        <hr>
+
+
+            <hr>
+
+            <h3>Links de Streaming</h3>
+
+            <form method="POST" action="/actions/salvar_streaming.php">
+
+                <input type="hidden" name="album_id" value="<?= $album_id ?>">
+                <?= csrfField() ?>
+
+                <?php foreach ($plataformas as $p): ?>
+
+                    <div style="margin-bottom:12px;">
+
+                        <label>
+                            <?= htmlspecialchars($p['nome']) ?>
+                        </label>
+
+                        <input
+                            type="url"
+                            name="streaming[<?= $p['id'] ?>]"
+                            value="<?= htmlspecialchars($linksSalvos[$p['id']] ?? '') ?>"
+                            placeholder="https://..."
+                            style="width:100%; padding:8px;"
+                        >
+
+                    </div>
+
+                <?php endforeach; ?>
+
+                <button type="submit">
+                    Salvar Links
+                </button>
+
+            </form>
+
+            <hr>
+
 
             <?php if ($mensagem): ?>
             <p style="color:green;"><?php echo $mensagem; ?></p>
@@ -232,6 +302,7 @@ if (isset($_POST['salvar_capa_fanart'])) {
             <br>
 
 
+        <div style="display:flex; gap:30px; align-items:flex-start;">
         <table border="1" cellpadding="5" id="tabela-faixas">
             <tr>
                 <th>Nº</th>
@@ -270,11 +341,41 @@ if (isset($_POST['salvar_capa_fanart'])) {
 
             <?php endforeach; ?>
         </table>
+        <?php if ($capaUrl): ?>
+<div style="
+    min-width:220px;
+    position:sticky;
+    top:20px;
+">
+
+    <img
+        src="<?php echo htmlspecialchars($capaUrl); ?>"
+        style="
+            width:220px;
+            height:220px;
+            object-fit:cover;
+            border-radius:8px;
+            box-shadow:0 0 12px rgba(0,0,0,.25);
+        "
+    >
+
+    <h3 style="margin-top:10px;">
+        <?php echo htmlspecialchars($album['banda']); ?>
+    </h3>
+
+    <p>
+        <?php echo htmlspecialchars($album['titulo']); ?>
+    </p>
+
+</div>
+<?php endif; ?>
+
+    </div>
 
 
 
         <br>
-        <a href="album.php?id=<?php echo $album_id; ?>">Voltar ao álbum</a>
+        <a href="/album.php?id=<?php echo $album_id; ?>">Voltar ao álbum</a>
 
         <script>
         const albumId = <?php echo $album_id; ?>;

@@ -1,5 +1,5 @@
 <?php
-require "../includes/bootstrap.php";
+require __DIR__ . '/../../app/includes/bootstrap.php';
 header('Content-Type: application/json');
 
 
@@ -34,16 +34,21 @@ $nota = isset($_POST['nota']) && $_POST['nota'] !== ''
     ? floatval($_POST['nota']) 
     : null;
 
-// Favorita só altera se vier no POST
-$favorita = null;
-
-if (isset($_POST['favorita'])) {
-    $favorita = $_POST['favorita'] ? 1 : 0;
+// 🔥 0 significa remover avaliação
+if ($nota !== null && $nota <= 0) {
+    $nota = null;
 }
 
 
+// Favorita só altera se vier no POST
+$favorita_enviada = array_key_exists('favorita', $_POST);
+$favorita = $favorita_enviada
+    ? ($_POST['favorita'] ? 1 : 0)
+    : null;
+
+
 // Se atribuiu nota, garantir pelo menos 1 reprodução
-if ($nota !== null) {
+if ($nota !== null && $nota > 0) {
 
     // Verifica se já existe reprodução desse usuário para essa faixa
     $stmt = $pdo->prepare("
@@ -68,28 +73,29 @@ if ($nota !== null) {
 }
 
 
-// Verifica se já existe avaliação
-$stmt = $pdo->prepare("
-    SELECT id FROM avaliacoes
-    WHERE usuario_id = ? AND faixa_id = ?
-");
-$stmt->execute([$usuario_id, $faixa_id]);
+// ==========================
+// SALVAR FAVORITO (INDEPENDENTE)
+// ==========================
 
-$existe = $stmt->fetchColumn();
+if ($favorita_enviada) {
 
-if ($existe) {
+    $stmt = $pdo->prepare("
+        SELECT id FROM avaliacoes
+        WHERE usuario_id = ? AND faixa_id = ?
+    ");
+    $stmt->execute([$usuario_id, $faixa_id]);
 
-    // UPDATE
-    if ($favorita !== null) {
+    $existe = $stmt->fetchColumn();
+
+    if ($existe) {
 
         $stmt = $pdo->prepare("
             UPDATE avaliacoes
-            SET nota = ?, favorita = ?
+            SET favorita = ?
             WHERE usuario_id = ? AND faixa_id = ?
         ");
 
         $stmt->execute([
-            $nota,
             $favorita,
             $usuario_id,
             $faixa_id
@@ -98,34 +104,101 @@ if ($existe) {
     } else {
 
         $stmt = $pdo->prepare("
-            UPDATE avaliacoes
-            SET nota = ?
-            WHERE usuario_id = ? AND faixa_id = ?
+            INSERT INTO avaliacoes
+            (usuario_id, faixa_id, nota, favorita)
+            VALUES (?, ?, NULL, ?)
         ");
 
         $stmt->execute([
-            $nota,
             $usuario_id,
-            $faixa_id
+            $faixa_id,
+            $favorita
         ]);
     }
-
-} else {
-
-    // INSERT
-    $stmt = $pdo->prepare("
-        INSERT INTO avaliacoes
-        (usuario_id, faixa_id, nota, favorita)
-        VALUES (?, ?, ?, ?)
-    ");
-
-    $stmt->execute([
-        $usuario_id,
-        $faixa_id,
-        $nota,
-        $favorita ?? 0
-    ]);
 }
+
+
+
+// ==========================
+// SALVAR NOTA (INDEPENDENTE)
+// ==========================
+
+if (array_key_exists('nota', $_POST)) {
+
+    $stmt = $pdo->prepare("
+        SELECT id FROM avaliacoes
+        WHERE usuario_id = ? AND faixa_id = ?
+    ");
+    $stmt->execute([$usuario_id, $faixa_id]);
+
+    $existe = $stmt->fetchColumn();
+
+    if ($nota === null) {
+
+        // remove apenas a nota
+        if ($existe) {
+
+            $stmt = $pdo->prepare("
+                UPDATE avaliacoes
+                SET nota = NULL
+                WHERE usuario_id = ? AND faixa_id = ?
+            ");
+
+            $stmt->execute([
+                $usuario_id,
+                $faixa_id
+            ]);
+        }
+
+    } else {
+
+        if ($existe) {
+
+            $stmt = $pdo->prepare("
+                UPDATE avaliacoes
+                SET nota = ?
+                WHERE usuario_id = ? AND faixa_id = ?
+            ");
+
+            $stmt->execute([
+                $nota,
+                $usuario_id,
+                $faixa_id
+            ]);
+
+        } else {
+
+            $stmt = $pdo->prepare("
+                INSERT INTO avaliacoes
+                (usuario_id, faixa_id, nota, favorita)
+                VALUES (?, ?, ?, 0)
+            ");
+
+            $stmt->execute([
+                $usuario_id,
+                $faixa_id,
+                $nota
+            ]);
+        }
+    }
+}
+
+
+
+// ==========================
+// LIMPEZA FINAL (opcional)
+// ==========================
+
+$stmt = $pdo->prepare("
+    DELETE FROM avaliacoes
+    WHERE usuario_id = ?
+    AND faixa_id = ?
+    AND nota IS NULL
+    AND favorita = 0
+");
+
+$stmt->execute([$usuario_id, $faixa_id]);
+
 
 
 // ==========================
@@ -173,7 +246,7 @@ $faixas_concluidas = 0;
 foreach ($faixas as $faixa) {
     if ($faixa['ouviu']) {
         $contribuicao = 0.5;
-        if ($faixa['nota'] !== null) $contribuicao += 0.5;
+        if ($faixa['nota'] > 0) $contribuicao += 0.5;
         $faixas_concluidas += $contribuicao;
     }
 }
