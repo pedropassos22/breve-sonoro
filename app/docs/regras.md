@@ -1,3 +1,17 @@
+## Regras reorganizadas
+
+
+
+
+
+
+
+
+
+
+---
+
+
 -[x] Não é mais um projéto, é um sistema
 Arquivos de ação ficam na pasta actions/
 Não usar AJAX ainda (por enquanto)
