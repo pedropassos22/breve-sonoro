@@ -3,6 +3,7 @@ CREATE TABLE usuarios (
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
+    remember_token VARCHAR(255) NULL,
     tipo VARCHAR(50) DEFAULT 'usuario'
 ) ENGINE=InnoDB;
 

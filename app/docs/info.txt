@@ -52,74 +52,74 @@ _______________Estrutura de Pastas___________________
 
 🗄 Banco de Dados (Resumo Estrutural)
 
-                    bandas
+bandas
 
-                        id
-                        nome
-                        slug
-                        imagem
-                        criado_em
-                        ano_formacao
-                        cidade
-
-
-                    albuns
-
-                        id
-                        banda_id
-                        titulo
-                        ano
-                        capa
-                        criado_por
-
-                        usuarios
-
-                            id
-                            nome
-                            email
-                            senha
-                            tipo (admin | usuario)
+    id
+    nome
+    slug
+    imagem
+    criado_em
+    ano_formacao
+    cidade
 
 
-                                        album_streaming_links
-                                            id
-                                            album_id
-                                            plataforma_id
-                                            url
+albuns
 
-                    avaliacoes
-                        id
-                        usuario_id
-                        faixa_id
-                        nota
-                        favorita
+    id
+    banda_id
+    titulo
+    ano
+    capa
+    criado_por
+
+usuarios
+
+    id
+    nome
+    email
+    senha
+    tipo (admin | usuario)
+
+
+album_streaming_links
+    id
+    album_id
+    plataforma_id
+    url
+
+avaliacoes
+    id
+    usuario_id
+    faixa_id
+    nota
+    favorita
 
 
 
-                                        banda_genero
-                                            banda_id
-                                            genero_id
+banda_genero
+    banda_id
+    genero_id
 
-                    progresso_album
+progresso_album
 
-                        id
-                        usuario_id
-                        album_id
-                        progresso
+    id
+    usuario_id
+    album_id
+    progresso
 
-                    faixas
-                        id
-                        album_id
-                        numero
-                        nome
-                        duracao
-                        total_ouvidas
+faixas
+    id
+    album_id
+    numero
+    nome
+    duracao
+    total_ouvidas
 
-                    generos
-                        id
-                        nome
-                        slug
-                        ativo
+generos
+    id
+    nome
+    slug
+    ativo
 
 plataformas_streaming
     id
@@ -128,21 +128,21 @@ plataformas_streaming
     url_base
     ativo TINYINT(1) DEFAULT 1
 
-                                        progresso_album
-                                            id
-                                            usuario_id
-                                            album_id
-                                            progresso
+progresso_album
+    id
+    usuario_id
+    album_id
+    progresso
 
-                    reproducoes
-                        id 
-                        usuario_id
-                        faixa_id
-                        data_hora
+reproducoes
+    id 
+    usuario_id
+    faixa_id
+    data_hora
 
 
 
-                    usuario_dash
-                            id 
-                            usuario_id
-                            album_id
+usuario_dash
+        id 
+        usuario_id
+        album_id
