@@ -37,11 +37,14 @@ CREATE TABLE albuns (
     banda_id INT NOT NULL,
     titulo VARCHAR(150) NOT NULL,
     ano INT,
+    mbid VARCHAR(64) NULL,
     capa VARCHAR(255),
     criado_por INT,
     FOREIGN KEY (banda_id) REFERENCES bandas(id) ON DELETE CASCADE,
     FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+
 
 CREATE TABLE faixas (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -79,19 +79,18 @@ foreach ($albuns as $key => $album) {
 <div class="album-card">
 
     <a href="album.php?id=<?php echo (int)$album['id']; ?>">
-        <img
-            <?php
-            $src = capaUrl(
-                $album['mbid'] ?? null,
-                $album['capa'] ?? null
-            );
-            ?>
+        <?php
+        $src = capaUrl(
+            $album['mbid'] ?? null,
+            $album['capa'] ?? null
+        );
+        ?>
 
-            <img
-                src="<?= htmlspecialchars($src) ?>"
-                loading="lazy"
-                onerror="this.src='/uploads/capas/default.jpg'"
-            >  
+        <img
+            src="<?= htmlspecialchars($src) ?>"
+            loading="lazy"
+            onerror="this.src='/uploads/capas/default.jpg'"
+        >
     </a>
 
 <div class="album-info">

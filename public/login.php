@@ -20,6 +20,9 @@ if (usuarioLogado()) {
 
 
 ?>
+
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,7 +39,7 @@ if (usuarioLogado()) {
 
 <h3>Entrar</h3>
 
-<form method="POST" action="/breve-sonoro/app/Actions/Auth/LoginAction.php">
+<form method="POST" action="/actions/auth/login.php">
     <?= csrfField() ?>
 
     <label>Email:</label><br>
@@ -57,7 +60,7 @@ if (usuarioLogado()) {
 <hr>
 
 <h3>Cadastrar</h3>
-<form method="POST" action="/breve-sonoro/app/Actions/Auth/RegisterAction.php">
+<form method="POST" action="/actions/auth/register.php">
     <?= csrfField() ?>
 
     <label>Nome:</label><br>

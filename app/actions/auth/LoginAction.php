@@ -15,7 +15,7 @@ $usuario = $service->login($email, $senha);
 
 if (!$usuario) {
     $_SESSION['erro'] = "Email ou senha inválidos.";
-    header("Location: /breve-sonoro/public/login.php");
+    header("Location: /login.php");
     exit;
 }
 
@@ -25,5 +25,5 @@ $_SESSION['usuario_id']   = $usuario['id'];
 $_SESSION['usuario_nome'] = $usuario['nome'];
 $_SESSION['usuario_tipo'] = $usuario['tipo'];
 
-header("Location: /breve-sonoro/public/dash.php");
+header("Location: /dash.php");
 exit;
