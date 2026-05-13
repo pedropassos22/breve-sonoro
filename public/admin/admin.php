@@ -165,9 +165,15 @@ verificarAdmin();
             <td><?php echo htmlspecialchars($album['banda']); ?></td>
             <td><?php echo $album['ano']; ?></td>
             <td>
-                <form method="POST" action="excluir_album.php" onsubmit="return confirm('Tem certeza que deseja excluir este álbum?');">
-                    <input type="hidden" name="album_id" value="<?php echo $album['id']; ?>">
-                    value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>"
+                <form method="POST" action="excluir_album.php"
+                    onsubmit="return confirm('Tem certeza que deseja excluir este álbum?');">
+
+                    <input type="hidden" name="album_id"
+                        value="<?php echo $album['id']; ?>">
+
+                    <input type="hidden" name="csrf_token"
+                        value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
                     <button type="submit">Excluir</button>
                 </form>
             </td>

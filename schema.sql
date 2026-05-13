@@ -10,6 +10,7 @@ CREATE TABLE usuarios (
 CREATE TABLE bandas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
+    nome_normalizado VARCHAR(255) NOT NULL AFTER nome,
     slug VARCHAR(150) UNIQUE,
     imagem VARCHAR(255),
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -45,10 +46,10 @@ CREATE TABLE albuns (
 ) ENGINE=InnoDB;
 
 
-
 CREATE TABLE faixas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     album_id INT NOT NULL,
+    disco INT DEFAULT 1 AFTER album_id,
     numero INT,
     nome VARCHAR(150),
     duracao VARCHAR(20),
