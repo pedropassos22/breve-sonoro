@@ -1,2 +1,2 @@
 .env
-public\admin\*.txt
+public/admin/*.txt
