@@ -18,6 +18,65 @@ verificarAdmin();
     $ano = "";
     $mbid = $_GET['mbid'] ?? null;
 
+    /*
+    ================================
+    FUNÇÕES AUXILIARES BANDAS
+    ================================
+    */
+
+    function gerarSlug($texto) {
+
+        $texto = strtolower($texto);
+        $texto = iconv('UTF-8', 'ASCII//TRANSLIT', $texto);
+        $texto = preg_replace('/[^a-z0-9]+/', '-', $texto);
+        $texto = trim($texto, '-');
+
+        return $texto;
+    }
+
+    function normalizarNome($texto) {
+
+        $texto = strtolower($texto);
+        $texto = iconv('UTF-8', 'ASCII//TRANSLIT', $texto);
+        $texto = preg_replace('/[^a-z0-9]/', '', $texto);
+
+        return $texto;
+    }
+
+    /*
+    ================================
+    BUSCA MUSICBRAINZ
+    ================================
+    */
+
+    $resultados = [];
+    $resultadoBanda = null;
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['album'])) {
+
+        $albumBusca = trim($_GET['album']);
+        $artistaBusca = trim($_GET['artista'] ?? '');
+
+        if ($albumBusca !== '') {
+            $resultados = buscarAlbumMusicBrainz($albumBusca, $artistaBusca);
+        }
+    }
+
+    /*
+    ================================
+    BUSCAR BANDA MUSICBRAINZ
+    ================================
+    */
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['buscar_banda'])) {
+
+        $bandaBusca = trim($_GET['buscar_banda']);
+
+        if ($bandaBusca !== '') {
+            $resultadoBanda = buscarBandaMusicBrainz($bandaBusca);
+        }
+    }
+
 
     // Preenchimento automático vindo do MusicBrainz
     if (isset($_GET['titulo'])) {
@@ -32,11 +91,103 @@ verificarAdmin();
 
 
 
-    // Se o formulário foi enviado
-    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    /*
+    ================================
+    CADASTRAR NOVA BANDA
+    ================================
+    */
 
-    $titulo    = trim($_POST['titulo']);
-    $banda_id  = $_POST['banda_id'];
+    if (isset($_POST['salvar_banda'])) {
+
+        $nome = trim($_POST['nome']);
+
+        $ano_formacao =
+            !empty($_POST['ano_formacao'])
+            ? $_POST['ano_formacao']
+            : null;
+
+        $cidade =
+            !empty($_POST['cidade'])
+            ? trim($_POST['cidade'])
+            : null;
+
+        if (empty($nome)) {
+
+            $mensagem = "O nome da banda é obrigatório.";
+
+        } else {
+
+            $slug = gerarSlug($nome);
+            $nome_normalizado = normalizarNome($nome);
+
+            $stmt = $pdo->prepare("
+                SELECT id FROM bandas
+                WHERE nome_normalizado = ?
+            ");
+
+            $stmt->execute([$nome_normalizado]);
+
+            if ($stmt->rowCount() > 0) {
+
+                $mensagem = "Essa banda já está cadastrada.";
+
+            } else {
+
+                $stmt = $pdo->prepare("
+                    INSERT INTO bandas (
+                        nome,
+                        slug,
+                        nome_normalizado,
+                        ano_formacao,
+                        cidade
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                ");
+
+                $stmt->execute([
+                    $nome,
+                    $slug,
+                    $nome_normalizado,
+                    $ano_formacao,
+                    $cidade
+                ]);
+
+                $banda_id_nova = $pdo->lastInsertId();
+
+                if (!empty($_POST['generos'])) {
+
+                    foreach ($_POST['generos'] as $genero_id) {
+
+                        $stmtGenero = $pdo->prepare("
+                            INSERT INTO banda_genero (
+                                banda_id,
+                                genero_id
+                            )
+                            VALUES (?, ?)
+                        ");
+
+                        $stmtGenero->execute([
+                            $banda_id_nova,
+                            $genero_id
+                        ]);
+                    }
+                }
+
+                $mensagem = "Banda cadastrada com sucesso!";
+            }
+        }
+    }
+
+
+
+    // Se o formulário foi enviado
+    if (
+    $_SERVER["REQUEST_METHOD"] === "POST"
+    && !isset($_POST['salvar_banda'])
+) {
+
+    $titulo = trim($_POST['titulo'] ?? '');
+    $banda_id = $_POST['banda_id'] ?? '';
 
     // se banda não foi selecionada mas veio do MusicBrainz
     if (empty($banda_id) && !empty($banda_nome_importada)) {
@@ -106,7 +257,7 @@ if ($bandaExistente) {
 
         $banda_id = $pdo->lastInsertId();
     }
-    $ano       = trim($_POST['ano']);
+    $ano = trim($_POST['ano'] ?? '');
 
     $anoAtual = date('Y');
 
@@ -271,7 +422,175 @@ if (empty($mensagem)) {
 </head>
 <body>
     <div class="container-cru">
+
         <h2>Cadastrar Novo Álbum</h2>
+        <hr>
+
+        <h3>Buscar álbum no MusicBrainz</h3>
+
+        <form method="GET">
+
+        Álbum:
+        <input type="text" name="album">
+
+        Artista:
+        <input type="text" name="artista">
+
+        <button type="submit">Buscar</button>
+
+        </form>
+
+        <hr>
+
+
+        <h3>Buscar Banda no MusicBrainz</h3>
+
+        <form method="GET">
+
+            Nome da banda:
+            <input type="text" name="buscar_banda">
+
+            <button type="submit">
+                Buscar Banda
+            </button>
+
+        </form>
+
+        <br>
+
+        <?php if ($resultadoBanda): ?>
+
+            <div style="margin-bottom:30px;">
+
+                <strong>
+                    <?php echo htmlspecialchars($resultadoBanda['nome']); ?>
+                </strong>
+
+                <br><br>
+
+                Ano de formação:
+                <?php
+                echo htmlspecialchars(
+                    $resultadoBanda['ano_formacao']
+                    ?? "Não informado"
+                );
+                ?>
+
+                <br><br>
+
+                Cidade / País:
+                <?php
+                echo htmlspecialchars(
+                    $resultadoBanda['cidade']
+                    ?? "Não informado"
+                );
+                ?>
+
+                <br><br>
+
+                Gêneros:
+
+                <ul>
+
+                <?php
+                if (!empty($resultadoBanda['generos'])) {
+
+                    foreach ($resultadoBanda['generos'] as $genero) {
+
+                        echo "<li>" .
+                            htmlspecialchars($genero) .
+                            "</li>";
+                    }
+                }
+                ?>
+
+                </ul>
+
+            </div>
+
+        <?php endif; ?>
+
+        <hr>
+
+        <h3>Cadastrar Nova Banda</h3>
+
+        <form method="POST">
+
+            <label>Nome da Banda:</label><br>
+
+            <input
+                type="text"
+                name="nome"
+                required
+                style="width:300px;"
+            >
+
+            <br><br>
+
+            <label>Ano de Formação:</label><br>
+
+            <input
+                type="number"
+                name="ano_formacao"
+                min="1900"
+                max="<?php echo date('Y'); ?>"
+                style="width:150px;"
+            >
+
+            <br><br>
+
+            <label>Cidade:</label><br>
+
+            <input
+                type="text"
+                name="cidade"
+                style="width:300px;"
+            >
+
+            <br><br>
+
+            <label>Gêneros:</label><br>
+
+            <select
+                name="generos[]"
+                multiple
+                required
+                style="width:300px; height:120px;"
+            >
+
+                <?php
+
+                $stmt = $pdo->query("
+                    SELECT id, nome
+                    FROM generos
+                    WHERE ativo = 1
+                    ORDER BY nome
+                ");
+
+                while ($genero = $stmt->fetch(PDO::FETCH_ASSOC)) {
+
+                    echo "
+                    <option value='{$genero['id']}'>
+                        {$genero['nome']}
+                    </option>
+                    ";
+                }
+
+                ?>
+
+            </select>
+
+            <br><br>
+
+            <button type="submit" name="salvar_banda">
+                Salvar Banda
+            </button>
+
+        </form>
+
+        <hr>    
+
+
 
         <?php if ($mensagem): ?>
 
@@ -283,6 +602,38 @@ if (empty($mensagem)) {
 
         <?php endif; ?>
 
+
+        <?php foreach ($resultados as $r): ?>
+
+        <div style="margin-bottom:20px;">
+
+        <?php
+
+        $titulo_r = $r['titulo'] ?? 'Sem título';
+        $artista_nome_r = $r['artista'] ?? 'Desconhecido';
+        $ano_r = $r['ano'] ?? '';
+        $mbid_r = htmlspecialchars($r['mbid'] ?? '');
+
+        ?>
+
+        <strong><?php echo htmlspecialchars($titulo_r); ?></strong><br>
+
+        Artista:
+        <?php echo htmlspecialchars($artista_nome_r); ?><br>
+
+        Ano:
+        <?php echo $ano_r; ?><br><br>
+
+        MBID:
+        <?php echo $mbid_r; ?><br><br>
+
+        <a href="novo_album.php?titulo=<?php echo urlencode($titulo_r); ?>&banda_nome=<?php echo urlencode($artista_nome_r); ?>&ano=<?php echo urlencode($ano_r); ?>&mbid=<?php echo urlencode($mbid_r); ?>">
+        Importar este álbum
+        </a>
+
+        </div>
+
+        <?php endforeach; ?>
 
         <form method="POST" enctype="multipart/form-data">
                 <?php if (!empty($banda_nome_importada)): ?>

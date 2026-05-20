@@ -1,358 +1,294 @@
-## Regras reorganizadas
+📐 REGRAS OFICIAIS DO SISTEMA
 
-
-
-
-
-
-
-
-
+    Este documento define as leis arquiteturais permanentes do sistema.
+    Não são sugestões. São regras estruturais.
 
 ---
 
+🧱 1. Estrutura do Sistema
+    
+    Regra 1 — Sistema, não Projeto
+        O repositório representa um sistema em evolução contínua, não um projeto temporário.
 
--[x] Não é mais um projéto, é um sistema
-Arquivos de ação ficam na pasta actions/
-Não usar AJAX ainda (por enquanto)
-Progresso é baseado em reproduções
-Dash é por usuário
+    Regra 2 — Camadas de Deploy
+        /public   → interface web (único acesso HTTP)
+        /app      → backend da aplicação
+        /storage  → dados internos
+    
+    Regra 3 — Web Root
+        Apenas /public é acessível pela web.
+        Nenhum PHP executável existe fora dele.
+        Todo código interno permanece protegido em /app.
 
-----------//--------//---------
+    Regra 4 — Root Limpo
+        A raiz do projeto não contém arquivos PHP executáveis.
+        Regra 5 — Uploads Públicos
+        Arquivos acessíveis ao usuário ficam exclusivamente em:
+            /public/uploads
 
-actions/ → só executa
-    👉 recebe requisição
-    👉 valida
-    👉 chama service
+    Regra 6 — Organização de Pastas
+        app/
+        ├── actions/
+        ├── services/
+        ├── includes/
+        └── docs/
+        actions/
 
-services/ → pensa e decide
-    👉 contém a lógica
-    👉 mexe no banco
-    👉 decide o que acontece
+            Executa somente:
 
-includes/ → suporte
+            recebe requisição
+            valida dados
+            chama Service
 
-----------//--------//---------
+            Nunca contém regra de negócio.
 
-A porcentagem dos albuns não devem eceder 100%, elas só somam quando são reproduzidas pela primeira vez, se for removida a reprodução e ficando em 0 ele subtrai a porcentagem, mas se ele for reproduisida mais de 1x ele não soma mais, apenas a primeira. (A faixa só pode contribuir 1x)
+        services/
+            Responsável por:
 
+            lógica do sistema
+            regras de negócio
+            acesso ao banco
+            decisões de domínio
 
+        includes/
 
-REGRA 11 — PUBLIC ROOT
-    Apenas /public é acessível pela web
-    Código do sistema fica em /app
-    Nada interno pode ser acessado via URL
+        Arquivos de suporte:
 
-12. ROOT LIMPO
-    A raiz do projeto não pode conter arquivos PHP executáveis.
-    Somente public/ pode expor páginas web.
+            bootstrap
+            helpers
+            configurações
+            utilidades globais
 
-13. ARQUIVOS DO USUÁRIO
-    Arquivos exibidos publicamente devem ficar dentro de public/uploads.
+---
 
-14. CAMADAS DE DEPLOY
-    -[x] public = interface web
-    -[x] app = backend da aplicação
-    storage = dados internos
+⚙️ 2. Bootstrap e Inicialização
+    
+    Regra 7 — Entrypoint Único
 
-15. BOOTSTRAP AVANÇADO
-    O bootstrap controla:
-    - timezone
-    - encoding
-    - ambiente (.env)
-    - erros
-    - logs
-    - includes globais
+        Todo arquivo público deve iniciar obrigatoriamente com:
+        require bootstrap.php;
+        Nenhuma lógica roda antes do bootstrap.
 
-16. SESSÃO
-    - Cookies seguros
-    - SameSite Strict
-    - CSRF obrigatório
-    - Sessão regenerada após login
+    Regra 8 — Bootstrap Central
 
-17. CONFIGURAÇÃO
-    -[x] config.php nunca possui credenciais
-    -[x] Todas as variáveis sensíveis vivem no .env
-    - Deploy não altera código, apenas ambiente
+        O bootstrap controla:
 
-18. ACTIONS
-    Toda action deve:
-    - carregar bootstrap.php
-    - executar validarPost()
-    - obterUsuarioId() obrigatoriamente
+        ambiente (.env)
+        encoding
+        timezone
+        erros
+        logs
+        sessão
+        includes globais
 
-19. SERVICES
-    Toda regra de negócio deve viver em services/.
-    Pages e Actions não podem escrever SQL direto
-    quando existir função equivalente no Service.
+    Regra 9 — Paths Absolutos
 
-20. CONSISTÊNCIA DE DOMÍNIO
-    Se uma ação altera estado musical,
-    o Service deve garantir automaticamente
-    a atualização de todas as dependências
-    (progresso, estatísticas, dashboards).
+        O bootstrap define constantes globais:
 
-21. ENTRYPOINT WEB
-    Nenhum arquivo PHP público executa lógica antes do bootstrap.
-    A primeira instrução executável deve ser:
-    require bootstrap.php
-
--[x] 22. PATHS
-    -[x] Nunca usar caminhos relativos frágeis.
-    -[x] O bootstrap deve definir constantes globais:
-    -[x] APP_PATH
-    -[x] PUBLIC_PATH
-    -[x] STORAGE_PATH
-
-23. RESPONSABILIDADE DAS CAMADAS
-    Pages:
-    - recebem request
-    - chamam services
-    - exibem dados
-
-    Actions:
-    - recebem eventos
-    - chamam services
-
-    Services:
-    - executam regras
-    - executam SQL
-
-24. Pages nunca incluem arquivos relativos.
-    Sempre usar __DIR__.
-
-25. ENTRYPOINT PATH
-    Todo arquivo público deve carregar o bootstrap usando:
-    require dirname(__DIR__, N) . '/app/includes/bootstrap.php';
-    Nunca usar caminhos relativos frágeis.
-
-26. LINKS DE STREAMING
-
-    Plataformas de streaming são entidades independentes.
-    Álbuns podem possuir zero ou múltiplos links.
-    A View nunca conhece plataformas fixas.
-    Novas plataformas devem funcionar sem alteração estrutural.
-
-27. CONTINUIDADE DE CONVERSA
-
-Chats utilizam apenas CONTEXTO BOOT reduzido.
-A memória arquitetural completa vive em /app/docs.
-O chat nunca deve carregar documentação integral
-
-
-
-
-
-
-
---------------------------------------
-CHAT GPT - ENXUTANDO O QUE ESTÁ NUMERO ACIMA, AINDA FALTA A PRIMEIRA PARTE
-
-
-Regra 1 — Web Root
-    Apenas /public é acessível pela web.
-    Nenhum PHP executável existe fora dele.
-    Código da aplicação vive em /app.
-
-Regra 2 — Uploads Públicos
-    Arquivos do usuário acessíveis pela web ficam somente em:
-    /public/uploads
-
-Regra 3 — Entrypoint Único
-    Todo arquivo público deve iniciar com:
-    require bootstrap.php;
-    Nenhuma lógica roda antes do bootstrap.
-
-Regra 4 — Bootstrap Central
-    O bootstrap configura ambiente, sessão, erros, logs, encoding, timezone e includes globais.
-
-Regra 5 — Paths Absolutos
-    O bootstrap define:
         APP_PATH
         PUBLIC_PATH
         STORAGE_PATH
 
-Regra 6 — Camadas do Sistema
-    public  → interface web
-    app     → backend
-    storage → dados internos
+        Nunca usar caminhos relativos frágeis.
 
-Regra 7 — Responsabilidade das Camadas
-    Pages: recebem request e exibem dados
-    Actions: recebem eventos
-    Services: executam regras e SQL
+    Regra 10 — EntryPath Seguro
 
-Regra 8 — Services Obrigatórios
-    Regras de negócio vivem em /app/services.
-    Pages e Actions não escrevem SQL direto.
+        Arquivos públicos carregam bootstrap via:
+        require dirname(__DIR__, N) . '/app/includes/bootstrap.php';
 
-Regra 9 — Consistência de Domínio
-    Toda alteração de estado deve atualizar automaticamente suas dependências (progresso, estatísticas, dashboards).
+    Regra 11 — Includes Seguros
 
-Regra 10 — Padrão de Action
-    Toda Action deve:
-    carregar bootstrap
-    validar POST
-    obter usuário autenticado
-
-Regra 11 — Configuração Segura
-    Credenciais nunca ficam no código.
-    Variáveis sensíveis vivem no .env.
-    Deploy altera ambiente, não código.
-
-Regra 12 — Sessão Segura
-    cookies seguros
-    SameSite Strict
-    CSRF obrigatório
-    regenerar sessão após login
-
-
---------------------------------------------------------------------------------------------------
-# 🧠 REGRA ARQUITETURAL — Sistema de Avaliações / Interações
-
-## Conceito Central
-
-A tabela `avaliacoes` **não representa apenas notas**.
-
-Ela funciona como um **container de interações do usuário com a faixa**.
-
-Uma interação pode existir mesmo sem avaliação numérica.
+        Pages nunca incluem arquivos por caminhos relativos instáveis.
+        Sempre usar:
+        __DIR__
 
 ---
 
-## 🎯 Princípios
+🧠 3. Arquitetura de Camadas
+    Regra 12 — Responsabilidade das Camadas
+        
+        Pages
+        recebem request
+        chamam services
+        exibem dados
+        Actions
+        recebem eventos
+        validam requisição
+        chamam services
+        Services
+        executam regras
+        executam SQL
+        garantem consistência
 
-### 1. Independência das ações
+    Regra 13 — Services Obrigatórios
 
-Cada ação do usuário é independente:
+        Regras de negócio vivem exclusivamente em:
+        /app/services
+        Pages e Actions não escrevem SQL quando existir Service equivalente.
 
-* ⭐ Nota (avaliação)
-* ❤️ Favorito
-* ▶ Reprodução
+    Regra 14 — Padrão de Action
 
-Nenhuma ação exige a existência da outra.
+        Toda Action deve:
 
----
+        carregar bootstrap
+        executar validarPost()
+        obter usuário via obterUsuarioId()
 
-### 2. Favoritar não exige avaliação nem reprodução
+    Regra 15 — Consistência de Domínio
 
-O usuário pode:
+        Quando um estado é alterado, o Service deve atualizar automaticamente:
 
-* favoritar sem ouvir
-* favoritar sem avaliar
-* avaliar sem favoritar
-* ouvir sem avaliar
+        progresso
+        estatísticas
+        dashboards
+        dependências relacionadas
 
----
+    Regra 16 — Sem AJAX (Fase Atual)
 
-### 3. Existência do registro `avaliacoes`
-
-Um registro em `avaliacoes` deve existir **sempre que houver qualquer interação significativa**.
-
-Criar registro quando existir:
-
-* nota definida **OU**
-* favorito definido
-
----
-
-### 4. Remoção do registro
-
-O registro deve ser removido **somente quando não existir nenhuma interação**:
-
-```
-nota === null
-AND
-favorita === null
-```
-
-Neste caso:
-
-```
-DELETE FROM avaliacoes
-```
+        O sistema não utiliza AJAX por enquanto.
+        Fluxo atual:
+        Request → Action → Service → Redirect
 
 ---
 
-### 5. Updates parciais
+🔐 4. Segurança
+    
+    Regra 17 — Configuração Segura
+        config.php nunca possui credenciais.
+        Variáveis sensíveis vivem no .env.
+        Deploy altera ambiente, nunca o código.
 
-Atualizações nunca devem sobrescrever dados não enviados.
+    Regra 18 — Sessão Segura
 
-Regras:
+        Obrigatório:
 
-* se `favorita` não vier no POST → NÃO alterar favorito
-* se `nota` não vier → NÃO alterar nota
+        cookies seguros
+        SameSite = Strict
+        proteção CSRF
+        regenerar sessão após login
 
-Cada campo é atualizado apenas quando explicitamente enviado.
+Regra 19 — Public Root Seguro
 
----
-
-### 6. Reprodução automática
-
-A reprodução automática só ocorre quando:
-
-```
-nota > 0
-```
-
-Motivo:
-
-Avaliar implica que o usuário ouviu ao menos uma vez.
-
-Favoritar **não** gera reprodução automática.
+    Nada interno pode ser acessado diretamente por URL.
 
 ---
 
-### 7. Progresso do álbum
+🗄️ 5. Banco de Dados
+    
+    Regra 20 — Schema Versionado
 
-O progresso considera apenas:
-
-* faixa ouvida
-* faixa avaliada
-
-Favoritar isoladamente **não contribui para progresso**.
-
----
-
-## 🧩 Modelo Mental Oficial
-
-```
-avaliacoes = Interactions
-```
-
-Não pensar mais como:
-
-```
-avaliacoes = ratings
-```
+        O banco deve possuir:
+        app/docs/schema.sql
+        O sistema deve poder ser reconstruído do zero apenas com o repositório.
 
 ---
 
-## 🚫 Anti-Regra (NÃO FAZER)
+🎵 6. Domínio Musical
 
-❌ exigir avaliação para favoritar
-❌ exigir reprodução para favoritar
-❌ sobrescrever campos não enviados
-❌ manter registros vazios em `avaliacoes`
+    Regra 21 — Progresso do Sistema
+
+        O progresso é baseado em:
+        reproduções válidas
+
+    Regra 22 — Dashboard
+
+        Dashboards são sempre:
+        por usuário
+        Nunca globais por padrão.
+
+    Regra 23 — Links de Streaming
+
+        Plataformas de streaming são entidades independentes.
+
+        Regras:
+
+        álbuns possuem zero ou múltiplos links
+        views não conhecem plataformas fixas
+        novas plataformas funcionam sem alteração estrutural
 
 ---
 
-## ✅ Objetivo Arquitetural
+🧠 7. Sistema de Interações (Avaliações)
+    
+    Conceito Central
+    avaliacoes = Interactions
 
-Separar:
+    Não representa apenas notas.
 
-* intenção do usuário
-* consumo do conteúdo
-* julgamento do conteúdo
+    Regra 24 — Independência das Ações
 
-O sistema registra **comportamento**, não apenas nota.
+        Ações independentes:
 
-28. SCHEMA VERSIONADO
+        ⭐ avaliação
+        ❤️ favorito
+        ▶ reprodução
 
-Todo banco deve possuir:
-app/docs/schema.sql
+        Nenhuma depende da outra.
 
-O sistema deve poder ser reconstruído
-do zero apenas com o repositório.
+    Regra 25 — Criação do Registro
 
-------------------------------------------------------
+        Criar registro quando existir:
+
+        nota definida
+        OU
+        favorito definido
+
+    Regra 26 — Remoção do Registro
+
+        Remover somente quando:
+
+        nota === null
+        AND
+        favorita === null
+
+    Regra 27 — Updates Parciais
+
+        Nunca sobrescrever campos ausentes.
+
+        Se não veio no POST → não altera.
+
+    Regra 28 — Reprodução Automática
+
+        Reprodução automática ocorre apenas quando:
+
+        nota > 0
+
+        Favoritar não gera reprodução.
+
+    Regra 29 — Progresso de Álbum
+
+        Conta apenas:
+
+        faixa ouvida
+        faixa avaliada
+
+        Favorito isolado não gera progresso.
+
+    Regra 30 — Anti-Regras
+
+        Nunca:
+
+        exigir avaliação para favoritar
+        exigir reprodução para favoritar
+        sobrescrever dados não enviados
+        manter registros vazios
+
+---
+
+📚 8. Documentação e Continuidade
+
+    Regra 31 — Memória Arquitetural
+
+        Chats utilizam apenas contexto reduzido.
+
+        A memória oficial vive em:
+
+        /app/docs
+
+    Regra 32 — Documentação Permanente
+
+        A arquitetura nunca depende do histórico de chat para existir.
+
+        O repositório é a fonte da verdade.
+
+---
