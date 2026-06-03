@@ -76,11 +76,13 @@ body {
 
 .album-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(6, 190px);
     gap: 30px;
+    justify-content: center;
 }
 
 .album-card {
+    width: 190px;
     text-align: center;
     display: flex;
     flex-direction: column;

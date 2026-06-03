@@ -72,61 +72,61 @@ foreach ($albuns as $key => $album) {
 
 <?php if (count($albuns) > 0): ?>
 
-<div class="album-grid">
+    <div class="album-grid">
 
-<?php foreach ($albuns as $album): ?>
+        <?php foreach ($albuns as $album): ?>
 
-<div class="album-card">
+        <div class="album-card">
 
-    <a href="album.php?id=<?php echo (int)$album['id']; ?>">
-        <?php
-        $src = capaUrl(
-            $album['mbid'] ?? null,
-            $album['capa'] ?? null
-        );
-        ?>
+            <a href="album.php?id=<?php echo (int)$album['id']; ?>">
+                <?php
+                $src = capaUrl(
+                    $album['mbid'] ?? null,
+                    $album['capa'] ?? null
+                );
+                ?>
 
-        <img
-            src="<?= htmlspecialchars($src) ?>"
-            loading="lazy"
-            onerror="this.src='/uploads/capas/default.jpg'"
-        >
-    </a>
+                <img
+                    src="<?= htmlspecialchars($src) ?>"
+                    loading="lazy"
+                    onerror="this.src='/uploads/capas/default.jpg'"
+                >
+            </a>
 
-<div class="album-info">
+            <div class="album-info">
 
-    <div class="album-title">
-        <?php echo htmlspecialchars($album['titulo']); ?>
-    </div>
+                <div class="album-title">
+                    <?php echo htmlspecialchars($album['titulo']); ?>
+                </div>
 
-    <div class="album-year-card">
-        (<?php echo htmlspecialchars($album['ano'] ?? ''); ?>)
-    </div>
+                <div class="album-year-card">
+                    (<?php echo htmlspecialchars($album['ano'] ?? ''); ?>)
+                </div>
 
-    <div class="album-artist">
-        <?php echo htmlspecialchars($album['banda_nome']); ?>
-    </div>
-
-
-</div>
+                <div class="album-artist">
+                    <?php echo htmlspecialchars($album['banda_nome']); ?>
+                </div>
 
 
-    <div class="card-progress-container">
-    <div class="card-progress-bar">
-        <div class="card-progress-fill" 
-             style="width: <?php echo (int)$album['progresso']; ?>%;">
+            </div>
+
+
+            <div class="card-progress-container">
+            <div class="card-progress-bar">
+                <div class="card-progress-fill" 
+                    style="width: <?php echo (int)$album['progresso']; ?>%;">
+                </div>
+            </div>
+            <div class="card-progress-text">
+                <?php echo (int)$album['progresso']; ?>%
+            </div>
         </div>
+
     </div>
-    <div class="card-progress-text">
-        <?php echo (int)$album['progresso']; ?>%
+
+        <?php endforeach; ?>
+
     </div>
-</div>
-
-</div>
-
-<?php endforeach; ?>
-
-</div>
 
 
 

@@ -368,14 +368,12 @@ function buscarBandaMusicBrainz($nome) {
 
     $artist = $data['artists'][0];
 
-    /* ano de formação */
     $ano = null;
 
     if (!empty($artist['life-span']['begin'])) {
         $ano = substr($artist['life-span']['begin'], 0, 4);
     }
 
-    /* cidade de fundação */
     $cidade = null;
 
     if (!empty($artist['begin-area']['name'])) {
@@ -385,10 +383,8 @@ function buscarBandaMusicBrainz($nome) {
         if (!empty($artist['area']['name'])) {
             $cidade .= ", " . $artist['area']['name'];
         }
-
     }
 
-    /* generos (tags) */
     $generos = [];
 
     if (!empty($artist['tags'])) {
@@ -400,7 +396,6 @@ function buscarBandaMusicBrainz($nome) {
         foreach (array_slice($artist['tags'], 0, 5) as $tag) {
             $generos[] = $tag['name'];
         }
-
     }
 
     return [
@@ -408,8 +403,69 @@ function buscarBandaMusicBrainz($nome) {
         "ano_formacao" => $ano,
         "cidade" => $cidade,
         "generos" => $generos,
-        "mbid" => $artist['id']
+        "mbid" => $artist['id'],
+        "discografia" => buscarDiscografiaArtista($artist['id'])
     ];
+}
+
+function buscarDiscografiaArtista($artistMbid) {
+
+    $url =
+        "https://musicbrainz.org/ws/2/release-group?" .
+        "artist=" . $artistMbid .
+        "&fmt=json" .
+        "&limit=100";
+
+    $opts = [
+        "http" => [
+            "method" => "GET",
+            "header" => "User-Agent: breve-sonoro/1.0"
+        ]
+    ];
+
+    $context = stream_context_create($opts);
+
+    $json = @file_get_contents($url, false, $context);
+
+    if (!$json) {
+        return [];
+    }
+
+    $data = json_decode($json, true);
+
+    if (empty($data['release-groups'])) {
+        return [];
+    }
+
+    $albuns = [];
+
+    foreach ($data['release-groups'] as $release) {
+
+        if (($release['primary-type'] ?? '') !== 'Album') {
+            continue;
+        }
+
+        $ano = '';
+
+        if (!empty($release['first-release-date'])) {
+            $ano = substr($release['first-release-date'], 0, 4);
+        }
+
+        $albuns[] = [
+            'titulo' => $release['title'],
+            'ano' => $ano,
+            'mbid' => $release['id'],
+            'capa' => "https://coverartarchive.org/release-group/" .
+            $release['id'] .
+            "/front-500"
+        ];
+    }
+
+    usort($albuns, function($a, $b) {
+        return strcmp($a['ano'], $b['ano']);
+    });
+
+    return $albuns;
 }
 
 

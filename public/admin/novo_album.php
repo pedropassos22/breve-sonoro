@@ -70,11 +70,18 @@ verificarAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['buscar_banda'])) {
 
-        $bandaBusca = trim($_GET['buscar_banda']);
+            $bandaBusca = trim($_GET['buscar_banda']);
 
-        if ($bandaBusca !== '') {
-            $resultadoBanda = buscarBandaMusicBrainz($bandaBusca);
+            if ($bandaBusca !== '') {
+                $resultadoBanda = buscarBandaMusicBrainz($bandaBusca);
+            }
         }
+
+        // Buscar MBIDs já cadastrados no banco
+        $mbidsCadastrados = [];
+        $stmtMbids = $pdo->query("SELECT mbid FROM albuns WHERE mbid IS NOT NULL AND mbid != ''");
+        foreach ($stmtMbids as $row) {
+            $mbidsCadastrados[] = $row['mbid'];
     }
 
 
@@ -505,6 +512,94 @@ if (empty($mensagem)) {
                 ?>
 
                 </ul>
+
+            </div>
+
+            <hr>
+
+            <h4>Discografia</h4>
+
+            <div
+            style="
+            display:flex;
+            flex-wrap:wrap;
+            gap:15px;
+            ">
+
+            <?php foreach ($resultadoBanda['discografia'] as $album): ?>
+
+            <a
+
+            <?php $jaCadastrado = in_array($album['mbid'], $mbidsCadastrados); ?>
+
+
+            href="<?= $jaCadastrado ? '#' : 'novo_album.php?titulo=' . urlencode($album['titulo']) . '&banda_nome=' . urlencode($resultadoBanda['nome']) . '&ano=' . urlencode($album['ano']) . '&mbid=' . urlencode($album['mbid']) ?>"
+            style="
+            text-decoration:none;
+            color:#fff;
+            width:160px;
+            opacity: <?= $jaCadastrado ? '0.5' : '1' ?>;
+            pointer-events: <?= $jaCadastrado ? 'none' : 'auto' ?>;
+            position: relative;
+            display: inline-block;
+            "
+            >
+
+            <?php if (!empty($album['capa'])): ?>
+
+            <img
+            src="<?= htmlspecialchars($album['capa']) ?>"
+            style="
+            width:160px;
+            height:160px;
+            object-fit:cover;
+            border-radius:8px;
+            display:block;
+            "
+            />
+
+            <?php if ($jaCadastrado): ?>
+            <div style="
+            background:#2a9d5c;
+            color:#fff;
+            font-size:11px;
+            font-weight:bold;
+            text-align:center;
+            padding:3px 0;
+            border-radius:0 0 8px 8px;
+            margin-top:-6px;
+            ">✔ Cadastrado</div>
+            <?php endif; ?>
+
+            <?php else: ?>
+
+            <div
+            style="
+            width:160px;
+            height:160px;
+            background:#333;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:8px;
+            "
+            >
+            Sem capa
+            </div>
+
+            <?php endif; ?>
+
+            <div style="margin-top:5px;">
+            <?= htmlspecialchars($album['titulo']) ?>
+            </div>
+
+            <div>
+            <?= htmlspecialchars($album['ano']) ?>
+            </div>
+
+            </a>
+
+            <?php endforeach; ?>
 
             </div>
 
