@@ -69,6 +69,7 @@ albuns
     banda_id
     titulo
     ano
+    mbid
     capa
     criado_por
 

@@ -161,8 +161,6 @@ POST toggle_favorito
 
 Fluxo oficial:
 
-Request → Action → Service → Estado → Redirect/JSON
-
 🔐 PADRÃO OFICIAL DE ACTIONS
 
 Toda Action obrigatoriamente:

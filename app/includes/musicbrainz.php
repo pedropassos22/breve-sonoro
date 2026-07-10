@@ -439,11 +439,7 @@ function buscarDiscografiaArtista($artistMbid) {
 
     $albuns = [];
 
-    foreach ($data['release-groups'] as $release) {
-
-        if (($release['primary-type'] ?? '') !== 'Album') {
-            continue;
-        }
+foreach ($data['release-groups'] as $release) {
 
         $ano = '';
 
@@ -452,12 +448,14 @@ function buscarDiscografiaArtista($artistMbid) {
         }
 
         $albuns[] = [
-            'titulo' => $release['title'],
-            'ano' => $ano,
-            'mbid' => $release['id'],
-            'capa' => "https://coverartarchive.org/release-group/" .
-            $release['id'] .
-            "/front-500"
+            'titulo'          => $release['title'],
+            'ano'             => $ano,
+            'mbid'            => $release['id'],
+            'primary_type'    => $release['primary-type'] ?? 'Other',
+            'secondary_types' => $release['secondary-types'] ?? [],
+            'capa'            => "https://coverartarchive.org/release-group/" .
+                                 $release['id'] .
+                                 "/front-500"
         ];
     }
 

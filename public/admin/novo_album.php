@@ -519,89 +519,133 @@ if (empty($mensagem)) {
 
             <h4>Discografia</h4>
 
-            <div
-            style="
-            display:flex;
-            flex-wrap:wrap;
-            gap:15px;
-            ">
+<?php
 
-            <?php foreach ($resultadoBanda['discografia'] as $album): ?>
+$secoes = [
+    'Album'       => [],
+    'Single'      => [],
+    'EP'          => [],
+    'Other'       => [],
+    'Live'        => [],
+    'Compilation' => [],
+    'Remix'       => [],
+    'Outros'      => [],
+];
 
-            <a
+$secundariosConhecidos = ['Live', 'Compilation', 'Remix'];
 
-            <?php $jaCadastrado = in_array($album['mbid'], $mbidsCadastrados); ?>
+foreach ($resultadoBanda['discografia'] as $album) {
+
+    $primary   = $album['primary_type'] ?? 'Other';
+    $secondary = $album['secondary_types'] ?? [];
+
+    $encaixou = false;
+
+    foreach ($secundariosConhecidos as $sec) {
+        if (in_array($sec, $secondary)) {
+            $secoes[$sec][] = $album;
+            $encaixou = true;
+            break;
+        }
+    }
+
+    if (!$encaixou) {
+        if (isset($secoes[$primary])) {
+            $secoes[$primary][] = $album;
+        } else {
+            $secoes['Outros'][] = $album;
+        }
+    }
+}
+
+foreach ($secoes as $secaoNome => $albuns):
+
+    if (empty($albuns)) continue;
+
+?>
+
+<h5 style="margin:25px 0 10px; border-bottom:1px solid #444; padding-bottom:5px;">
+    <?= htmlspecialchars($secaoNome) ?>
+    <span style="font-weight:normal; font-size:12px; color:#888;">
+        (<?= count($albuns) ?>)
+    </span>
+</h5>
+
+<div style="display:flex; flex-wrap:wrap; gap:15px;">
+
+<?php foreach ($albuns as $album):
+
+    $jaCadastrado = in_array($album['mbid'], $mbidsCadastrados);
+
+?>
 
 
-            href="<?= $jaCadastrado ? '#' : 'novo_album.php?titulo=' . urlencode($album['titulo']) . '&banda_nome=' . urlencode($resultadoBanda['nome']) . '&ano=' . urlencode($album['ano']) . '&mbid=' . urlencode($album['mbid']) ?>"
-            style="
-            text-decoration:none;
-            color:#fff;
-            width:160px;
-            opacity: <?= $jaCadastrado ? '0.5' : '1' ?>;
-            pointer-events: <?= $jaCadastrado ? 'none' : 'auto' ?>;
-            position: relative;
-            display: inline-block;
-            "
-            >
+<a href="<?= $jaCadastrado ? '#' : 'novo_album.php?titulo=' . urlencode($album['titulo']) . '&banda_nome=' . urlencode($resultadoBanda['nome']) . '&ano=' . urlencode($album['ano']) . '&mbid=' . urlencode($album['mbid']) ?>"
+style="
+text-decoration:none;
+color:#fff;
+width:160px;
+opacity:<?= $jaCadastrado ? '0.5' : '1' ?>;
+pointer-events:<?= $jaCadastrado ? 'none' : 'auto' ?>;
+display:inline-block;
+"
+>
 
-            <?php if (!empty($album['capa'])): ?>
+<?php if (!empty($album['capa'])): ?>
 
-            <img
-            src="<?= htmlspecialchars($album['capa']) ?>"
-            style="
-            width:160px;
-            height:160px;
-            object-fit:cover;
-            border-radius:8px;
-            display:block;
-            "
-            />
+<img
+src="<?= htmlspecialchars($album['capa']) ?>"
+style="
+width:160px;
+height:160px;
+object-fit:cover;
+border-radius:8px;
+display:block;
+"
+/>
 
-            <?php if ($jaCadastrado): ?>
-            <div style="
-            background:#2a9d5c;
-            color:#fff;
-            font-size:11px;
-            font-weight:bold;
-            text-align:center;
-            padding:3px 0;
-            border-radius:0 0 8px 8px;
-            margin-top:-6px;
-            ">✔ Cadastrado</div>
-            <?php endif; ?>
+<?php if ($jaCadastrado): ?>
+<div style="
+background:#2a9d5c;
+color:#fff;
+font-size:11px;
+font-weight:bold;
+text-align:center;
+padding:3px 0;
+border-radius:0 0 8px 8px;
+margin-top:-6px;
+">✔ Cadastrado</div>
+<?php endif; ?>
 
-            <?php else: ?>
+<?php else: ?>
 
-            <div
-            style="
-            width:160px;
-            height:160px;
-            background:#333;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border-radius:8px;
-            "
-            >
-            Sem capa
-            </div>
+<div style="
+width:160px;
+height:160px;
+background:#333;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:8px;
+">Sem capa</div>
 
-            <?php endif; ?>
+<?php endif; ?>
 
-            <div style="margin-top:5px;">
-            <?= htmlspecialchars($album['titulo']) ?>
-            </div>
+<div style="margin-top:5px; font-size:13px;">
+    <?= htmlspecialchars($album['titulo']) ?>
+</div>
 
-            <div>
-            <?= htmlspecialchars($album['ano']) ?>
-            </div>
+<div style="font-size:12px; color:#888;">
+    <?= htmlspecialchars($album['ano']) ?>
+</div>
 
-            </a>
+</a>
 
-            <?php endforeach; ?>
+<?php endforeach; ?>
 
-            </div>
+</div>
+
+<?php endforeach; ?>
 
         <?php endif; ?>
 
