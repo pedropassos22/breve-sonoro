@@ -12,96 +12,68 @@ document.querySelectorAll(".star-rating").forEach(rating => {
 
     stars.forEach(star => {
 
-        star.addEventListener("mousemove", function(e) {
+        star.addEventListener("mousemove", function () {
 
-            const rect = this.getBoundingClientRect();
-            const metade = e.clientX - rect.left < rect.width / 2;
+    const valor = parseInt(this.dataset.value);
 
-            let valorBase = parseInt(this.dataset.value);
-            let valor;
+    atualizarEstrelas(stars, valor);
 
-            if (valorBase === 1 && metade) {
-                valor = null; // 🔥 NÃO CLASSIFICADO (CORRETO)
-            } else {
-                valor = metade ? valorBase - 0.5 : valorBase;
-            }
-
-
-            atualizarEstrelas(stars, valor);
-        });
+});
 
         star.addEventListener("mouseleave", function() {
             atualizarEstrelas(stars, notaAtual);
         });
 
-        star.addEventListener("click", function(e) {
+        star.addEventListener("click", function () {
 
-            const rect = this.getBoundingClientRect();
-            const metade = e.clientX - rect.left < rect.width / 2;
+    let valor = parseInt(this.dataset.value);
 
-            let valorBase = parseInt(this.dataset.value);
-            let valor;
+    // Se clicou na mesma nota, remove a avaliação
+    if (notaAtual === valor) {
+        valor = 0;
+    }
 
-            if (valorBase === 1 && metade) {
-                valor = 0; // 🔥 reset total
-            } else {
-                valor = metade ? valorBase - 0.5 : valorBase;
-}
-            notaAtual = valor;
-            rating.dataset.nota = valor ?? 0;
+    notaAtual = valor;
+    rating.dataset.nota = valor;
 
-            atualizarEstrelas(stars, valor);
+    atualizarEstrelas(stars, valor);
 
-            let row = rating.closest(".track-row");
-            let faixaId = row.querySelector("input[name='faixa_id']").value;
+    let row = rating.closest(".track-row");
+    let faixaId = row.querySelector("input[name='faixa_id']").value;
 
-            let formData = new FormData();
-            formData.append("faixa_id", faixaId);
-            formData.append("nota", valor === null ? "" : valor);
-            formData.append("csrf_token", CSRF_TOKEN);
+    let formData = new FormData();
+    formData.append("faixa_id", faixaId);
+    formData.append("nota", valor);
+    formData.append("csrf_token", CSRF_TOKEN);
 
-
-        fetch(BASE_URL + "actions/salvar_avaliacao.php", { 
-            method: "POST", 
-            body: formData 
-        })
-        .then(res => res.text())
-        .then(res => {
-            console.log("AVALIACAO:", res);
-        let row = rating.closest(".track-row");
-
-        atualizarBarraProgresso();        
+    fetch(BASE_URL + "actions/salvar_avaliacao.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.text())
+    .then(() => {
+        atualizarBarraProgresso();
     });
 
-
-        });
+});
 
     });
 
 });
 
-function atualizarEstrelas(stars, nota) {
+    function atualizarEstrelas(stars, nota) {
 
-    stars.forEach(star => {
-        star.classList.remove("filled", "half");
-    });
+        stars.forEach(star => {
 
-    // 🔥 se for null ou 0 → não classificado
-    if (!nota) return;
+            star.classList.remove("filled");
 
-    stars.forEach(star => {
+            if (parseInt(star.dataset.value) <= nota) {
+                star.classList.add("filled");
+            }
 
-        const valor = parseInt(star.dataset.value);
+        });
 
-        if (valor <= Math.floor(nota)) {
-            star.classList.add("filled");
-        }
-        else if (valor - 0.5 === nota) {
-            star.classList.add("half");
-        }
-
-    });
-}
+    }
 
 
     /* ==========================

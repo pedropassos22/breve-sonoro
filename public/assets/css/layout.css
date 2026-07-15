@@ -456,21 +456,6 @@ body {
     color: #f5b301;
 }
 
-.star.half {
-    color: #ccc;
-}
-
-.star.half::before {
-    content: "★";
-    position: absolute;
-    left: 0;
-    width: 50%;
-    overflow: hidden;
-    color: #f5b301;
-}
-
-
-
 
 .album-header-top {
     display: flex;
