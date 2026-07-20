@@ -16,8 +16,9 @@ if (!isset($_GET['album_id'])) {
 $album_id = $_GET['album_id'];
 
 $stmtAlbum = $pdo->prepare("
-    SELECT 
+    SELECT
         a.titulo,
+        a.ano,
         a.capa,
         b.nome AS banda
     FROM albuns a
@@ -53,6 +54,51 @@ $linksSalvos = buscarLinksStreamingIndexados($pdo, $album_id);
 
 
 $mensagem = "";
+
+// ==========================
+// SALVAR DADOS DO ÁLBUM
+// ==========================
+
+if (isset($_POST['salvar_album'])) {
+
+    $titulo = trim($_POST['titulo']);
+    $ano = trim($_POST['ano']);
+
+    if ($titulo === "") {
+
+        $mensagem = "Informe o título do álbum.";
+
+    } elseif (!preg_match('/^\d{4}$/', $ano)) {
+
+        $mensagem = "Ano inválido.";
+
+    } elseif ($ano < 1900 || $ano > date('Y')) {
+
+        $mensagem = "Ano fora do intervalo permitido.";
+
+    } else {
+
+        $stmt = $pdo->prepare("
+            UPDATE albuns
+            SET
+                titulo = ?,
+                ano = ?
+            WHERE id = ?
+        ");
+
+        $stmt->execute([
+            $titulo,
+            $ano,
+            $album_id
+        ]);
+
+        // Atualiza os dados exibidos na tela
+        $album['titulo'] = $titulo;
+        $album['ano'] = $ano;
+
+        $mensagem = "Dados do álbum atualizados com sucesso!";
+    }
+}
 
 if (isset($_POST['salvar_capa'])) {
 
@@ -207,21 +253,70 @@ if (isset($_POST['salvar_capa_fanart'])) {
 
 
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Nova Faixa - breve-sonoro</title>
-    <link rel="stylesheet" href="assets/css/layout.css">
-</head>
-<body>
 
-    <div class="container-cru">
+<?php require dirname(__DIR__, 2) . '/app/includes/header.php'; ?>
+
+<div class="container-cru">
+
         <h2>Adicionar Faixa</h2>
 
         <hr>
 
 
             <hr>
+
+
+            <hr>
+
+            <h3>Editar Dados do Álbum</h3>
+
+                <form method="POST">
+
+                    <div style="margin-bottom:12px;">
+                        <label>Título</label><br>
+                        <input
+                            type="text"
+                            name="titulo"
+                            value="<?= htmlspecialchars($album['titulo']) ?>"
+                            style="width:100%; padding:8px;"
+                            required
+                        >
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label>Ano</label><br>
+                        <input
+                            type="number"
+                            name="ano"
+                            value="<?= htmlspecialchars($album['ano']) ?>"
+                            min="1900"
+                            max="<?= date('Y') ?>"
+                            style="width:120px; padding:8px;"
+                            required
+                        >
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label>Banda</label><br>
+                        <input
+                            type="text"
+                            value="<?= htmlspecialchars($album['banda']) ?>"
+                            disabled
+                            style="width:100%; padding:8px;"
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        name="salvar_album">
+                        Salvar Dados
+                    </button>
+
+                </form>
+
+            <hr>
+
+
 
             <h3>Links de Streaming</h3>
 
@@ -326,7 +421,7 @@ if (isset($_POST['salvar_capa_fanart'])) {
                     </td>
                     <td>
                     
-                    <form method="POST" action="admin/excluir_faixa.php" style="display:inline;">
+                    <form method="POST" action="excluir_faixa.php" style="display:inline;">
                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                         <input type="hidden" name="faixa_id" value="<?php echo $faixa['id']; ?>">
                         <input type="hidden" name="album_id" value="<?php echo $album_id; ?>">
@@ -434,7 +529,7 @@ if (isset($_POST['salvar_capa_fanart'])) {
                 if (!tdAcao.innerHTML.trim()) {
 
                     tdAcao.innerHTML = `
-                        <form method="POST" action="admin/excluir_faixa.php" style="display:inline;">
+                        <form method="POST" action="excluir_faixa.php" style="display:inline;">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <input type="hidden" name="faixa_id" value="${data.id}">
                             <input type="hidden" name="album_id" value="${albumId}">
@@ -510,5 +605,5 @@ if (isset($_POST['salvar_capa_fanart'])) {
         adicionarLinha();
         </script>
     </div>
-</body>
-</html>
+
+<?php require dirname(__DIR__, 2) . '/app/includes/footer.php'; ?>

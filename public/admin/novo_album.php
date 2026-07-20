@@ -580,7 +580,12 @@ foreach ($secoes as $secaoNome => $albuns):
 ?>
 
 
-<a href="<?= $jaCadastrado ? '#' : 'novo_album.php?titulo=' . urlencode($album['titulo']) . '&banda_nome=' . urlencode($resultadoBanda['nome']) . '&ano=' . urlencode($album['ano']) . '&mbid=' . urlencode($album['mbid']) ?>"
+<a href="#"
+class="album-release"
+data-mbid="<?= htmlspecialchars($album['mbid']) ?>"
+data-titulo="<?= htmlspecialchars($album['titulo']) ?>"
+data-banda="<?= htmlspecialchars($resultadoBanda['nome']) ?>"
+data-ano="<?= htmlspecialchars($album['ano']) ?>"
 style="
 text-decoration:none;
 color:#fff;
@@ -650,6 +655,20 @@ border-radius:8px;
         <?php endif; ?>
 
         <hr>
+
+        <div id="lista-releases" style="
+        margin:30px 0;
+        padding:20px;
+        border:1px solid #444;
+        display:none;
+        ">
+
+        <h3>Escolha uma edição</h3>
+
+        <div id="conteudo-releases">
+        </div>
+
+        </div>
 
         <h3>Cadastrar Nova Banda</h3>
 
@@ -850,6 +869,9 @@ border-radius:8px;
 
             <script>
             document.getElementById("capaInput").addEventListener("change", function(event) {
+
+            
+
                 const file = event.target.files[0];
                 const preview = document.getElementById("preview");
 
@@ -864,6 +886,8 @@ border-radius:8px;
                     reader.readAsDataURL(file);
                 }
             });
+
+            
             </script>
     </div>
 

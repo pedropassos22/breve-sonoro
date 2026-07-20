@@ -1,6 +1,5 @@
 <?php
-require "../includes/config.php";
-require "../includes/session.php";
+require dirname(__DIR__, 2) . '/app/includes/bootstrap.php';
 
 verificarAdmin();
 
@@ -30,5 +29,5 @@ if (!$stmt->fetch()) {
 $stmt = $pdo->prepare("DELETE FROM faixas WHERE id = ?");
 $stmt->execute([$faixaId]);
 
-header("Location: ../nova_faixa.php?album_id=" . $albumId);
+header("Location: /admin/nova_faixa.php?album_id=" . $albumId);
 exit();

@@ -71,6 +71,10 @@ verificarAdmin();
 
 ?>
 
+<?php require dirname(__DIR__, 2) . '/app/includes/header.php'; ?>
+
+<div class="container-cru">
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -93,14 +97,6 @@ verificarAdmin();
 <body>
 
 <h2>Dashboard Administrativo</h2>
-
-<p>
-    <a href="/index.php">Início</a> |
-    <a href="/dash.php">Minha Dash</a> |
-    <a href="/logout.php">Sair</a>
-</p>
-
-<hr>
 
 
 <div class="grid">
