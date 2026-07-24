@@ -17,6 +17,7 @@ verificarAdmin();
     $banda_id = "";
     $ano = "";
     $mbid = $_GET['mbid'] ?? null;
+    $release_mbid = null;
 
     /*
     ================================
@@ -195,6 +196,9 @@ verificarAdmin();
 
     $titulo = trim($_POST['titulo'] ?? '');
     $banda_id = $_POST['banda_id'] ?? '';
+
+    $mbid = $_POST['mbid'] ?? null;
+    $release_mbid = $_POST['release_mbid'] ?? null;
 
     // se banda não foi selecionada mas veio do MusicBrainz
     if (empty($banda_id) && !empty($banda_nome_importada)) {
@@ -395,16 +399,17 @@ if (empty($mensagem)) {
     // 🔥 pegar id do álbum recém criado
     $album_id = $pdo->lastInsertId();
 
-    // 🔥 importar faixas do MusicBrainz se houver MBID
-    if (!empty($mbid)) {
+// Importar faixas do MusicBrainz usando o Release MBID escolhido
+    if (!empty($release_mbid)) {
 
-        $faixas = buscarFaixasAlbum($mbid);
+        $faixas = buscarFaixasAlbum($release_mbid);
 
         if (!empty($faixas)) {
             salvarFaixasAlbum($pdo, $album_id, $faixas);
         }
 
     }
+    
 
 
 
@@ -420,6 +425,8 @@ if (empty($mensagem)) {
 
 
 }
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -798,6 +805,10 @@ border-radius:8px;
                 <input type="hidden" name="banda_nome_nova" value="<?php echo htmlspecialchars($banda_nome_importada); ?>">
                 <?php endif; ?>
 
+                <input type="hidden" name="mbid" id="mbid">
+                <input type="hidden" name="release_mbid" id="release_mbid">
+
+
 
                 <label>Título:</label><br>
                 <input 
@@ -888,6 +899,135 @@ border-radius:8px;
             });
 
             
+            </script>
+           
+           <script>
+
+                document.querySelectorAll(".album-release").forEach(function(item){
+
+                    item.addEventListener("click", function(e){
+
+                        e.preventDefault();
+
+                        const mbid = this.dataset.mbid;
+                        const ano = this.dataset.ano;
+
+                        console.log("MBID clicado:", mbid);
+                        console.log("Ano do álbum:", ano);
+
+                        fetch(
+                            "buscar_releases.php?mbid=" +
+                            encodeURIComponent(mbid) +
+                            "&ano=" +
+                            encodeURIComponent(ano)
+                        )
+
+                        .then(r => r.json())
+
+                        .then(resposta => {
+
+                            if(!resposta.sucesso){
+                                alert("Erro ao buscar releases.");
+                                return;
+                            }
+
+                            let html = "";
+
+                            resposta.dados.forEach(function(release){
+
+                                html += `
+                                <div style="
+                                    border:1px solid #666;
+                                    padding:12px;
+                                    margin-bottom:10px;
+                                    ${release.recomendada ? "background:#234d23;" : ""}
+                                ">
+
+                                    <strong>${release.titulo}</strong><br>
+
+                                        Ano: ${release.ano ?? "-"}<br>
+
+                                        País: ${release.pais}<br>
+
+                                        Formato: ${release.formato}<br>
+
+                                        Status: ${release.status}<br>
+
+                                        Faixas: ${release.faixas}<br><br>
+
+                                        <button
+                                            type="button"
+                                            class="btn-importar-release"
+                                            data-release-mbid="${release.mbid}"
+                                            data-release-group-mbid="${mbid}"
+                                            data-titulo="${item.dataset.titulo}"
+                                            data-banda="${item.dataset.banda}"
+                                            data-ano="${item.dataset.ano}"
+                                        >
+                                            Importar esta edição
+                                        </button>
+
+                                        </div>
+                                `;
+
+                            });
+
+                            document.getElementById("conteudo-releases").innerHTML = html;
+
+                            document.getElementById("lista-releases").style.display = "block";
+
+                            document.getElementById("lista-releases")
+                                .scrollIntoView({
+                                    behavior:"smooth"
+                                });
+
+                        })
+
+                        .catch(function(erro){
+
+                            console.error("Erro ao buscar releases:", erro);
+
+                            alert(
+                                "Não foi possível buscar as edições do álbum.\n\n" +
+                                "Verifique o Console (F12) para ver o erro."
+                            );
+
+                        });
+
+                    });
+
+                });
+
+
+
+                                                        document.addEventListener("click", function(e){
+
+                                                            if (!e.target.classList.contains("btn-importar-release")) {
+                                                                return;
+                                                            }
+
+                                                            const botao = e.target;
+
+                                                            const releaseMbid = botao.dataset.releaseMbid;
+                                                            const releaseGroupMbid = botao.dataset.releaseGroupMbid;
+                                                            const titulo = botao.dataset.titulo;
+                                                            const banda = botao.dataset.banda;
+                                                            const ano = botao.dataset.ano;
+
+                                                            console.log("Release MBID escolhido:", releaseMbid);
+                                                            console.log("Release Group MBID:", releaseGroupMbid);
+
+                                                            document.getElementById("mbid").value = releaseGroupMbid;
+
+                                                            document.getElementById("release_mbid").value = releaseMbid;
+
+                                                            document.querySelector('input[name="titulo"]').value = titulo;
+
+                                                            document.querySelector('input[name="ano"]').value = ano;
+
+                                                        });
+
+
             </script>
     </div>
 

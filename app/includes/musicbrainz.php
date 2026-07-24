@@ -116,14 +116,7 @@ if ($json === false) {
             return [];
         }
 
-
-        $releaseMBID = buscarReleaseDoReleaseGroup($mbid);
-
-        if (!$releaseMBID) {
-            return [];
-        }
-
-        $url = "https://musicbrainz.org/ws/2/release/$releaseMBID?inc=recordings&fmt=json";
+        $url = "https://musicbrainz.org/ws/2/release/$mbid?inc=recordings&fmt=json";
 
 
         $opts = [
@@ -307,11 +300,6 @@ if ($json === false) {
 
     function baixarCapaMusicBrainz($mbid, $titulo, $bandaNome) {
 
-        $releaseMBID = buscarReleaseDoReleaseGroup($mbid);
-
-        if (!$releaseMBID) {
-            return null;
-        }
 
         $url = "https://coverartarchive.org/release/$releaseMBID/front-500";
 
@@ -504,18 +492,29 @@ if ($json === false) {
         return $albuns;
     }
 
-    function buscarReleasesDoReleaseGroup($releaseGroupMBID) {
+ function buscarReleasesDoReleaseGroup($releaseGroupMBID, $anoAlbum = null) {
 
-$url = "https://musicbrainz.org/ws/2/release"
-     . "?query=release-group:" . urlencode($releaseGroupMBID)
-     . "&inc=release-groups+media"
-     . "&fmt=json"
-     . "&limit=100";
+    if (!preg_match('/^[a-f0-9\-]{36}$/i', $releaseGroupMBID)) {
+        return [];
+    }
 
+    /*
+     * Busca diretamente os Releases pertencentes ao Release Group.
+     *
+     * Importante:
+     * Não usamos "query=release-group:MBID".
+     * Usamos o parâmetro direto "release-group=MBID".
+     *
+     * Assim evitamos que a busca textual retorne resultados
+     * incompletos ou inconsistentes.
+     */
+    $url = "https://musicbrainz.org/ws/2/release"
+         . "?release-group=" . urlencode($releaseGroupMBID)
+         . "&inc=media"
+         . "&fmt=json"
+         . "&limit=100";
 
     $dados = musicBrainzRequest($url);
-
-    
 
     if (empty($dados['releases'])) {
         return [];
@@ -534,74 +533,153 @@ $url = "https://musicbrainz.org/ws/2/release"
 
     foreach ($dados['releases'] as $release) {
 
+        /*
+         * Data completa do Release.
+         *
+         * Exemplos:
+         * 2009-10-28
+         * 2009-11-03
+         * 2016
+         */
+        $data = $release['date'] ?? null;
+
         $ano = 9999;
 
-        if (!empty($release['date'])) {
-            $ano = (int) substr($release['date'], 0, 4);
+        if (!empty($data)) {
+            $ano = (int) substr($data, 0, 4);
         }
 
-        $titulo = $release['release-group']['title'] 
-        ?? $release['title'] 
-        ?? '';
+        /*
+         * O título deve vir diretamente do Release.
+         */
+        $titulo = $release['title'] ?? '';
 
-        $descricao = $release['disambiguation'] 
-          ?? $release['release-group']['disambiguation']
-          ?? '';
+        /*
+         * Descrição específica da edição.
+         */
+        $descricao = $release['disambiguation'] ?? '';
 
         $status = $release['status'] ?? '';
 
         $pais = $release['country'] ?? '';
 
-        $formato = '';
+        /*
+         * Formato.
+         *
+         * Algumas edições possuem mais de uma mídia.
+         * Vamos juntar os formatos encontrados.
+         */
+        $formatos = [];
 
-        $faixas = 9999;
-
-        if (!empty($release['media'][0]['format'])) {
-            $formato = $release['media'][0]['format'];
-        }
+        $faixas = 0;
 
         if (!empty($release['media'])) {
 
-            $faixas = 0;
-
             foreach ($release['media'] as $media) {
 
+                if (!empty($media['format'])) {
+
+                    $formato = $media['format'];
+
+                    if (!in_array($formato, $formatos, true)) {
+                        $formatos[] = $formato;
+                    }
+
+                }
+
                 if (!empty($media['track-count'])) {
-                    $faixas += (int)$media['track-count'];
+                    $faixas += (int) $media['track-count'];
                 }
 
             }
 
         }
 
+        $formato = !empty($formatos)
+            ? implode(' + ', $formatos)
+            : '';
+
+        if ($faixas === 0) {
+            $faixas = null;
+        }
+
+        /*
+         * Cálculo da recomendação.
+         *
+         * A recomendação é apenas uma sugestão.
+         * Todas as edições continuam disponíveis para escolha.
+         */
         $penalidade = 0;
 
+        /*
+         * Prioriza o mesmo ano do álbum escolhido.
+         */
+        if ($anoAlbum !== null && $ano !== 9999) {
+
+            if ($ano === (int) $anoAlbum) {
+                $penalidade -= 2000;
+            } else {
+
+                /*
+                 * Releases de outros anos continuam aparecendo,
+                 * mas ficam abaixo dos Releases do ano original.
+                 */
+                $distanciaAno = abs($ano - (int) $anoAlbum);
+
+                $penalidade += $distanciaAno;
+
+            }
+
+        }
+
+        /*
+         * Priorizar Releases oficiais.
+         */
         if (strcasecmp($status, 'Official') !== 0) {
             $penalidade += 1000;
         }
 
-            $textoAnalise = mb_strtolower(
-                $titulo . ' ' . $descricao
-            );
+        /*
+         * Evitar recomendar versões especiais.
+         */
+        $textoAnalise = mb_strtolower(
+            $titulo . ' ' . $descricao
+        );
 
-            foreach ($palavrasRuins as $palavra) {
+        foreach ($palavrasRuins as $palavra) {
 
             if (strpos($textoAnalise, $palavra) !== false) {
+
                 $penalidade += 500;
+
                 break;
+
             }
 
-    }
+        }
 
         $releases[] = [
 
-            'mbid' => $release['id'],
+            /*
+             * ESTE é o Release MBID da edição.
+             *
+             * Será usado posteriormente para importar
+             * as faixas da edição escolhida.
+             */
+            'mbid' => $release['id'] ?? null,
 
             'titulo' => $titulo,
 
             'descricao' => $descricao,
 
-            'ano' => $ano == 9999 ? null : $ano,
+            'ano' => $ano === 9999
+                ? null
+                : $ano,
+
+            /*
+             * Data completa.
+             */
+            'data' => $data,
 
             'pais' => $pais,
 
@@ -609,24 +687,34 @@ $url = "https://musicbrainz.org/ws/2/release"
 
             'formato' => $formato,
 
-            'faixas' => $faixas == 9999 ? null : $faixas,
+            'faixas' => $faixas,
 
             '_score' => [
                 $penalidade,
                 $ano,
-                $faixas
+                $faixas ?? 9999
             ]
 
         ];
 
     }
 
+    /*
+     * Ordenar:
+     *
+     * 1. Melhor pontuação
+     * 2. Ano mais antigo
+     * 3. Menor quantidade de faixas
+     */
     usort($releases, function ($a, $b) {
 
         return $a['_score'] <=> $b['_score'];
 
     });
 
+    /*
+     * Marcar somente a primeira como recomendada.
+     */
     foreach ($releases as $i => &$release) {
 
         $release['recomendada'] = ($i === 0);
@@ -635,37 +723,51 @@ $url = "https://musicbrainz.org/ws/2/release"
 
     }
 
+    unset($release);
+
     return $releases;
 
 }
 
-    /*Legada, essa função sera removida na etapa 4*/ function buscarReleaseDoReleaseGroup($releaseGroupMBID) {
 
-        $url = "https://musicbrainz.org/ws/2/release?release-group=$releaseGroupMBID&fmt=json&limit=1";
+/*
+ * Função antiga mantida separada por enquanto.
+ * Ela não é usada pela nova seleção de Releases.
+ */
+function buscarReleaseDoReleaseGroup($releaseGroupMBID) {
 
-        $opts = [
-            "http" => [
-                "method" => "GET",
-                "header" => "User-Agent: breve-sonoro/1.0"
-            ]
-        ];
-
-        $context = stream_context_create($opts);
-
-        $json = @file_get_contents($url, false, $context);
-
-        if (!$json) {
-            return null;
-        }
-
-        $data = json_decode($json, true);
-
-        if (empty($data['releases'][0]['id'])) {
-            return null;
-        }
-
-        return $data['releases'][0]['id'];
+    if (!preg_match('/^[a-f0-9\-]{36}$/i', $releaseGroupMBID)) {
+        return null;
     }
+
+    $url = "https://musicbrainz.org/ws/2/release"
+         . "?release-group=" . urlencode($releaseGroupMBID)
+         . "&fmt=json"
+         . "&limit=1";
+
+    $opts = [
+        "http" => [
+            "method" => "GET",
+            "header" => "User-Agent: breve-sonoro/1.0"
+        ]
+    ];
+
+    $context = stream_context_create($opts);
+
+    $json = @file_get_contents($url, false, $context);
+
+    if (!$json) {
+        return null;
+    }
+
+    $data = json_decode($json, true);
+
+    if (empty($data['releases'][0]['id'])) {
+        return null;
+    }
+
+    return $data['releases'][0]['id'];
+}
 
     function baixarCapaFanart($bandaNome, $albumNome) {
 
