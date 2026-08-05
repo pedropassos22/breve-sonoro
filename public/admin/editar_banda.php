@@ -1,6 +1,5 @@
 <?php
-require "includes/config.php";
-require "includes/session.php";
+require __DIR__ . '/../_init.php';
 
 verificarLogin();
 verificarAdmin();
