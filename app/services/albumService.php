@@ -207,3 +207,33 @@ function resolverCapaAlbum(array $album): ?string
 
     return null;
 }
+
+function buscarFaixasFavoritas(PDO $pdo, int $usuario_id): array
+{
+    $stmt = $pdo->prepare("
+        SELECT
+            f.id,
+            f.numero,
+            f.nome AS faixa_nome,
+            a.id AS album_id,
+            a.titulo AS album_titulo,
+            a.ano AS album_ano,
+            a.mbid,
+            a.capa,
+            b.nome AS banda_nome
+        FROM avaliacoes av
+        JOIN faixas f
+            ON av.faixa_id = f.id
+        JOIN albuns a
+            ON f.album_id = a.id
+        JOIN bandas b
+            ON a.banda_id = b.id
+        WHERE av.usuario_id = ?
+          AND av.favorita = 1
+        ORDER BY b.nome ASC, a.ano ASC, a.titulo ASC, f.numero ASC
+    ");
+
+    $stmt->execute([$usuario_id]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
