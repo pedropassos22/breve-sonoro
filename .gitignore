@@ -1,3 +1,8 @@
 .env
 public/admin/*.txt
 public/*.txt
+
+storage/logs/*
+!storage/logs/.gitkeep
+public/uploads/capas/bACKUP/
+verificar-case.php
