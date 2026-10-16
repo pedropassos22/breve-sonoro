@@ -37,5 +37,11 @@ try {
 
 } catch (PDOException $e) {
 
+    error_log('Erro de conexão: ' . $e->getMessage());
+
+    if (($_ENV['APP_ENV'] ?? '') === 'local') {
+        exit('Erro de conexão com banco: ' . $e->getMessage());
+    }
+
     exit('Erro de conexão com banco.');
 }
